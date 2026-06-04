@@ -23,8 +23,8 @@ export 'src/exceptions.dart';
 /// print('Documents directory path: ${docsDir.path}');
 ///
 /// // Retrieve the directory excluded from backups
-/// final noBackupPath = await PathManager.getApplicationNoBackupPath();
-/// print('No-backup directory: $noBackupPath');
+/// final noBackupDir = await PathManager.getApplicationNoBackupDirectory();
+/// print('No-backup directory: ${noBackupDir.path}');
 /// ```
 abstract final class PathManager {
   /// Gets the path to the temporary directory on the host device.
@@ -138,22 +138,22 @@ abstract final class PathManager {
   ///
   /// ```dart
   /// try {
-  ///   final path = await PathManager.getApplicationNoBackupPath();
-  ///   final localLog = File('$path/diagnostics.log');
+  ///   final directory = await PathManager.getApplicationNoBackupDirectory();
+  ///   final localLog = File('${directory.path}/diagnostics.log');
   ///   await localLog.writeAsString('Sensitive local telemetry...');
   /// } on BackupExclusionConflictException catch (e) {
   ///   print('Backup exclusion error: ${e.message}');
   /// }
   /// ```
-  static Future<String> getApplicationNoBackupPath() async {
+  static Future<Directory> getApplicationNoBackupDirectory() async {
     final String? path = await PlatformPathManager.instance
-        .getApplicationNoBackupPath();
+        .getApplicationNoBackupDirectory();
     if (path == null) {
       throw MissingPlatformDirectoryException(
-        'Unable to get application no backup directory path',
+        'Unable to get application no backup directory',
       );
     }
-    return path;
+    return Directory(path);
   }
 
   /// Sets whether the file or directory at [path] should be excluded from backups.

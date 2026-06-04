@@ -17,7 +17,7 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 | `getApplicationSupportDirectory()` | ✅ | ✅ | ✅ | Application-created directory for app state, databases, etc. |
 | `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
 | `getCachesDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
-| `getApplicationNoBackupPath()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
+| `getApplicationNoBackupDirectory()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ Throws | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
 
 ---
@@ -38,7 +38,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 ```yaml
 dependencies:
   path_manager:
-    path: ^0.5.0
+    path: ^0.6.0
 ```
 
 Then run:
@@ -118,24 +118,24 @@ final Directory caches = await PathManager.getCachesDirectory();
 print('Support Dir: ${support.path}');
 ```
 
-### 2. Getting the Dedicated No-Backup Path
+### 2. Getting the Dedicated No-Backup Directory
 
-The `getApplicationNoBackupPath()` method provides a default directory path. If the directory does not exist, it is automatically created and (on Apple platforms) marked as excluded from backups.
+The `getApplicationNoBackupDirectory()` method provides a default directory. If the directory does not exist, it is automatically created and (on Apple platforms) marked as excluded from backups.
 
 ```dart
 import 'dart:io';
 import 'package:path_manager/path_manager.dart';
 
 try {
-  final String noBackupPath = await PathManager.getApplicationNoBackupPath();
-  final File localConfig = File('$noBackupPath/settings.json');
+  final Directory noBackupDir = await PathManager.getApplicationNoBackupDirectory();
+  final File localConfig = File('${noBackupDir.path}/settings.json');
   await localConfig.writeAsString('{"offline_mode": true}');
-  print('Saved sensitive offline settings to: $noBackupPath');
+  print('Saved sensitive offline settings to: ${noBackupDir.path}');
 } on BackupExclusionConflictException catch (e) {
   // Occurs if the __no_backup__ folder exists but was manually un-excluded
   print('Conflict detected: ${e.message}');
 } on MissingPlatformDirectoryException catch (e) {
-  print('Failed to resolve path: ${e.message}');
+  print('Failed to resolve directory: ${e.message}');
 }
 ```
 

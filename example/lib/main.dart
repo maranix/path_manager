@@ -18,7 +18,7 @@ class _MyAppState extends State<MyApp> {
   Directory? _applicationSupportDirectory;
   Directory? _documentsDirectory;
   Directory? _cachesDirectory;
-  String? _noBackupPath;
+  Directory? _noBackupDirectory;
   String _exclusionTestResult = 'Not tested';
   String? _error;
 
@@ -34,18 +34,19 @@ class _MyAppState extends State<MyApp> {
       final appSupport = await PathManager.getApplicationSupportDirectory();
       final docs = await PathManager.getApplicationDocumentsDirectory();
       final caches = await PathManager.getCachesDirectory();
-      String? noBackup;
+      Directory? noBackup;
       try {
-        noBackup = await PathManager.getApplicationNoBackupPath();
+        noBackup = await PathManager.getApplicationNoBackupDirectory();
       } catch (e) {
-        noBackup = 'Error: $e';
+        // We can't easily display a Directory-with-error, so we might just log it
+        debugPrint('Error loading no-backup dir: $e');
       }
       setState(() {
         _temporaryDirectory = temp;
         _applicationSupportDirectory = appSupport;
         _documentsDirectory = docs;
         _cachesDirectory = caches;
-        _noBackupPath = noBackup;
+        _noBackupDirectory = noBackup;
       });
     } catch (e) {
       setState(() {
@@ -111,7 +112,7 @@ class _MyAppState extends State<MyApp> {
                       _documentsDirectory?.path,
                     ),
                     _buildPathCard('Caches Directory', _cachesDirectory?.path),
-                    _buildPathCard('No Backup Directory', _noBackupPath),
+                    _buildPathCard('No Backup Directory', _noBackupDirectory?.path),
 
                     const SizedBox(height: 16),
                     Card(

@@ -11,7 +11,7 @@ class MissingPlatformDirectoryException implements Exception {
   String toString() => 'MissingPlatformDirectoryException: $message';
 }
 
-/// Exception thrown by [PathManager.getApplicationNoBackupPath] when the
+/// Exception thrown by [PathManager.getApplicationNoBackupDirectory] when the
 /// designated no-backup directory (`__no_backup__`) already exists on the
 /// filesystem, but has not been marked with the backup exclusion flag.
 ///

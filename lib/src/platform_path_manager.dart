@@ -50,7 +50,7 @@ abstract class PlatformPathManager {
   /// Gets the absolute path to a default directory that is excluded from platform backup systems.
   ///
   /// Returns `null` if the directory cannot be resolved or accessed.
-  Future<String?> getApplicationNoBackupPath();
+  Future<String?> getApplicationNoBackupDirectory();
 
   /// Sets whether the filesystem entity at [path] should be excluded from backups.
   ///

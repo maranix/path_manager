@@ -84,7 +84,7 @@ class AndroidPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getApplicationNoBackupPath() async {
+  Future<String?> getApplicationNoBackupDirectory() async {
     final supportPath = await getApplicationSupportPath();
     if (supportPath == null) return null;
 

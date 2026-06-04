@@ -124,7 +124,7 @@ void main() {
       );
 
       test(
-        'getApplicationNoBackupPath returns a valid path, ensures backup exclusion, and throws BackupExclusionConflictException if existing directory is not excluded',
+        'getApplicationNoBackupDirectory returns a valid directory, ensures backup exclusion, and throws BackupExclusionConflictException if existing directory is not excluded',
         () async {
           bool getIsExcluded(String path) {
             final nsPath = NSString(path);
@@ -154,23 +154,22 @@ void main() {
           }
 
           try {
-            final noBackupPath = await PathManager.getApplicationNoBackupPath();
-            expect(noBackupPath, isNotEmpty);
+            final noBackupDirectory = await PathManager.getApplicationNoBackupDirectory();
+            expect(noBackupDirectory.path, isNotEmpty);
 
-            final dir = Directory(noBackupPath);
-            expect(dir.existsSync(), isTrue);
-            expect(getIsExcluded(noBackupPath), isTrue);
+            expect(noBackupDirectory.existsSync(), isTrue);
+            expect(getIsExcluded(noBackupDirectory.path), isTrue);
 
             // Manually set exclusion to false to test exception throwing when the directory already exists
             await PathManager.setApplicationPathIsExcludedFromBackup(
-              noBackupPath,
+              noBackupDirectory.path,
               false,
             );
-            expect(getIsExcluded(noBackupPath), isFalse);
+            expect(getIsExcluded(noBackupDirectory.path), isFalse);
 
-            // Querying the path again should now throw BackupExclusionConflictException
+            // Querying the directory again should now throw BackupExclusionConflictException
             expect(
-              () => PathManager.getApplicationNoBackupPath(),
+              () => PathManager.getApplicationNoBackupDirectory(),
               throwsA(isA<BackupExclusionConflictException>()),
             );
           } finally {
@@ -198,17 +197,16 @@ void main() {
       );
 
       test(
-        'getApplicationNoBackupPath returns a valid path and creates directory on Android',
+        'getApplicationNoBackupDirectory returns a valid directory and creates it on Android',
         () async {
-          final path = await PathManager.getApplicationNoBackupPath();
-          expect(path, isNotEmpty);
-          expect(Directory(path).existsSync(), isTrue);
-          expect(path.endsWith('__no_backup__'), isTrue);
+          final directory = await PathManager.getApplicationNoBackupDirectory();
+          expect(directory.path, isNotEmpty);
+          expect(directory.existsSync(), isTrue);
+          expect(directory.path.endsWith('__no_backup__'), isTrue);
 
           // Clean up
-          final dir = Directory(path);
-          if (await dir.exists()) {
-            await dir.delete(recursive: true);
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
           }
         },
       );

@@ -62,6 +62,21 @@ abstract final class PathManager {
     return Directory(path);
   }
 
+  /// Path to a directory where the application may place data that should not be backed up.
+  ///
+  /// On iOS and macOS, this creates a `__no_backup__` directory under the application support
+  /// directory, marks it as excluded from iCloud/iTunes backups, and returns its path.
+  static Future<String> getApplicationNoBackupPath() async {
+    final String? path = await PlatformPathManager.instance
+        .getApplicationNoBackupPath();
+    if (path == null) {
+      throw MissingPlatformDirectoryException(
+        'Unable to get application no backup directory path',
+      );
+    }
+    return path;
+  }
+
   /// Sets whether the file or directory at [path] should be excluded from backups.
   ///
   /// On iOS and macOS, this sets the `NSURLIsExcludedFromBackupKey` resource value.

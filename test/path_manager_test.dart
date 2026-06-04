@@ -112,5 +112,49 @@ void main() {
         );
       },
     );
+
+    test(
+      'getApplicationNoBackupPath returns a valid path and ensures backup exclusion',
+      () async {
+        bool getIsExcluded(String path) {
+          final nsPath = NSString(path);
+          final url = NSURL.fileURLWithPath(nsPath);
+          final key = NSString('NSURLIsExcludedFromBackupKey');
+          final valPtrPtr = pkg_ffi.calloc<Pointer<ObjCObjectImpl>>();
+          try {
+            final success = url.getResourceValue(valPtrPtr, forKey: key);
+            expect(success, isTrue);
+            expect(valPtrPtr.value, isNot(nullptr));
+            final getVal = NSNumber.fromPointer(
+              valPtrPtr.value,
+              retain: true,
+              release: true,
+            );
+            return getVal.boolValue;
+          } finally {
+            pkg_ffi.calloc.free(valPtrPtr);
+          }
+        }
+
+        final noBackupPath = await PathManager.getApplicationNoBackupPath();
+        expect(noBackupPath, isNotEmpty);
+
+        final dir = Directory(noBackupPath);
+        expect(dir.existsSync(), isTrue);
+        expect(getIsExcluded(noBackupPath), isTrue);
+
+        // Manually set exclusion to false to test self-healing
+        await PathManager.setApplicationPathIsExcludedFromBackup(
+          noBackupPath,
+          false,
+        );
+        expect(getIsExcluded(noBackupPath), isFalse);
+
+        // Querying the path again should heal/re-exclude the directory
+        final noBackupPath2 = await PathManager.getApplicationNoBackupPath();
+        expect(noBackupPath2, equals(noBackupPath));
+        expect(getIsExcluded(noBackupPath), isTrue);
+      },
+    );
   });
 }

@@ -26,6 +26,9 @@ abstract class PlatformPathManager {
   /// Gets the path to the caches directory.
   Future<String?> getCachesPath();
 
+  /// Gets the path to the application no backup directory.
+  Future<String?> getApplicationNoBackupPath();
+
   /// Sets whether the file or directory at [path] should be excluded from backups.
   Future<void> setApplicationPathIsExcludedFromBackup(
     String path,

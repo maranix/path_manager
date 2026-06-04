@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'package:ffi/ffi.dart' as pkg_ffi;
 import 'package:objective_c/objective_c.dart';
 import 'package:path_manager/bindings/foundation/bindings.g.dart';
 import 'platform_path_manager.dart';
@@ -46,6 +47,46 @@ class FoundationPathManager extends PlatformPathManager {
       create: true,
     );
     return url?.path?.toDartString();
+  }
+
+  @override
+  Future<String?> getApplicationNoBackupPath() async {
+    final supportPath = await getApplicationSupportPath();
+    if (supportPath == null) return null;
+
+    final noBackupPath = '$supportPath/__no_backup__';
+    final dir = Directory(noBackupPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    // Check if the directory is already excluded from backup
+    final nsPath = NSString(noBackupPath);
+    final url = NSURL.fileURLWithPath(nsPath);
+    final key = NSString('NSURLIsExcludedFromBackupKey');
+    final valPtrPtr = pkg_ffi.calloc<Pointer<ObjCObjectImpl>>();
+    bool isExcluded = false;
+    try {
+      final success = url.getResourceValue(valPtrPtr, forKey: key);
+      if (success && valPtrPtr.value != nullptr) {
+        final getVal = NSNumber.fromPointer(
+          valPtrPtr.value,
+          retain: true,
+          release: true,
+        );
+        isExcluded = getVal.boolValue;
+      }
+    } catch (_) {
+      // If querying fails, we treat it as not excluded
+    } finally {
+      pkg_ffi.calloc.free(valPtrPtr);
+    }
+
+    if (!isExcluded) {
+      await setApplicationPathIsExcludedFromBackup(noBackupPath, true);
+    }
+
+    return noBackupPath;
   }
 
   @override

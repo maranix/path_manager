@@ -18,6 +18,8 @@ class _MyAppState extends State<MyApp> {
   Directory? _applicationSupportDirectory;
   Directory? _documentsDirectory;
   Directory? _cachesDirectory;
+  String? _noBackupPath;
+  String _exclusionTestResult = 'Not tested';
   String? _error;
 
   @override
@@ -32,15 +34,46 @@ class _MyAppState extends State<MyApp> {
       final appSupport = await PathManager.getApplicationSupportDirectory();
       final docs = await PathManager.getApplicationDocumentsDirectory();
       final caches = await PathManager.getCachesDirectory();
+      String? noBackup;
+      try {
+        noBackup = await PathManager.getApplicationNoBackupPath();
+      } catch (e) {
+        noBackup = 'Error: $e';
+      }
       setState(() {
         _temporaryDirectory = temp;
         _applicationSupportDirectory = appSupport;
         _documentsDirectory = docs;
         _cachesDirectory = caches;
+        _noBackupPath = noBackup;
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
+      });
+    }
+  }
+
+  Future<void> _testBackupExclusion() async {
+    setState(() {
+      _exclusionTestResult = 'Testing...';
+    });
+    try {
+      final tempDir = await PathManager.getTemporaryDirectory();
+      final testFile = File('${tempDir.path}/example_test_file.txt');
+      await testFile.writeAsString('Hello World');
+
+      await PathManager.setApplicationPathIsExcludedFromBackup(
+        testFile.path,
+        true,
+      );
+
+      setState(() {
+        _exclusionTestResult = 'Success: Excluded file from backup.';
+      });
+    } catch (e) {
+      setState(() {
+        _exclusionTestResult = 'Failed: $e';
       });
     }
   }
@@ -65,13 +98,50 @@ class _MyAppState extends State<MyApp> {
                 )
               : ListView(
                   children: [
-                    _buildPathCard('Temporary Directory', _temporaryDirectory),
+                    _buildPathCard(
+                      'Temporary Directory',
+                      _temporaryDirectory?.path,
+                    ),
                     _buildPathCard(
                       'Application Support Directory',
-                      _applicationSupportDirectory,
+                      _applicationSupportDirectory?.path,
                     ),
-                    _buildPathCard('Documents Directory', _documentsDirectory),
-                    _buildPathCard('Caches Directory', _cachesDirectory),
+                    _buildPathCard(
+                      'Documents Directory',
+                      _documentsDirectory?.path,
+                    ),
+                    _buildPathCard('Caches Directory', _cachesDirectory?.path),
+                    _buildPathCard('No Backup Directory', _noBackupPath),
+
+                    const SizedBox(height: 16),
+                    Card(
+                      color: Colors.blueGrey.shade900,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Test Backup Exclusion API',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Status: $_exclusionTestResult',
+                              style: const TextStyle(fontFamily: 'monospace'),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _testBackupExclusion,
+                              child: const Text('Run Exclusion Test'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -79,7 +149,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Widget _buildPathCard(String title, Directory? directory) {
+  Widget _buildPathCard(String title, String? path) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Padding(
@@ -93,10 +163,10 @@ class _MyAppState extends State<MyApp> {
             ),
             const SizedBox(height: 8),
             Text(
-              directory?.path ?? 'Loading...',
+              path ?? 'Loading...',
               style: TextStyle(
                 fontFamily: 'monospace',
-                color: directory != null ? Colors.greenAccent : Colors.grey,
+                color: path != null ? Colors.greenAccent : Colors.grey,
               ),
             ),
           ],

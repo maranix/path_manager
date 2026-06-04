@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'android_path_manager.dart';
 import 'foundation_path_manager.dart';
 
 /// The platform interface for PathManager.
@@ -10,6 +11,9 @@ abstract class PlatformPathManager {
   static PlatformPathManager _getDefaultPlatform() {
     if (Platform.isMacOS || Platform.isIOS) {
       return FoundationPathManager();
+    }
+    if (Platform.isAndroid) {
+      return AndroidPathManager();
     }
     throw UnimplementedError('Platform is not supported.');
   }

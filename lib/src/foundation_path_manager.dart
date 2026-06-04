@@ -1,10 +1,12 @@
 import 'dart:ffi';
 import 'package:objective_c/objective_c.dart';
 import 'package:path_manager/bindings/foundation/bindings.g.dart';
-import 'path_manager_platform.dart';
+import 'platform_path_manager.dart';
 
-class FoundationPathManagerPlatform extends PathManagerPlatform {
-  FoundationPathManagerPlatform() {
+/// The iOS/macOS implementation of [PlatformPathManager] using Apple Foundation APIs via FFI.
+class FoundationPathManager extends PlatformPathManager {
+  /// Creates a new [FoundationPathManager] and registers selectors.
+  FoundationPathManager() {
     // Foundation is already loaded in the host process on Apple platforms.
     // Instantiate FoundationFFI to register classes and selectors.
     FoundationFFI(DynamicLibrary.process());

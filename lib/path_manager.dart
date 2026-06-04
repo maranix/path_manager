@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'src/path_manager_platform.dart';
+import 'src/platform_path_manager.dart';
 
-export 'src/path_manager_platform.dart';
+export 'src/platform_path_manager.dart';
 
 /// Exception thrown when the platform is unable to provide a directory.
 class MissingPlatformDirectoryException implements Exception {
@@ -20,7 +20,7 @@ abstract final class PathManager {
   /// Path to the temporary directory on the device that is not backed up and is
   /// suitable for storing caches of downloaded files.
   static Future<Directory> getTemporaryDirectory() async {
-    final String? path = await PathManagerPlatform.instance.getTemporaryPath();
+    final String? path = await PlatformPathManager.instance.getTemporaryPath();
     if (path == null) {
       throw MissingPlatformDirectoryException('Unable to get temporary directory');
     }
@@ -30,7 +30,7 @@ abstract final class PathManager {
   /// Path to a directory where the application may place data that is
   /// user-generated, or that cannot otherwise be recreated by your application.
   static Future<Directory> getApplicationSupportDirectory() async {
-    final String? path = await PathManagerPlatform.instance.getApplicationSupportPath();
+    final String? path = await PlatformPathManager.instance.getApplicationSupportPath();
     if (path == null) {
       throw MissingPlatformDirectoryException('Unable to get application support directory');
     }
@@ -39,7 +39,7 @@ abstract final class PathManager {
 
   /// Path to the directory where the application may place user-generated data.
   static Future<Directory> getApplicationDocumentsDirectory() async {
-    final String? path = await PathManagerPlatform.instance.getDocumentsPath();
+    final String? path = await PlatformPathManager.instance.getDocumentsPath();
     if (path == null) {
       throw MissingPlatformDirectoryException('Unable to get application documents directory');
     }
@@ -48,7 +48,7 @@ abstract final class PathManager {
 
   /// Path to the cache directory on the device.
   static Future<Directory> getCachesDirectory() async {
-    final String? path = await PathManagerPlatform.instance.getCachesPath();
+    final String? path = await PlatformPathManager.instance.getCachesPath();
     if (path == null) {
       throw MissingPlatformDirectoryException('Unable to get caches directory');
     }

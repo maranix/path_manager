@@ -8,7 +8,7 @@ void main() async {
   // Configure logging
   Logger.root.level = Level.INFO;
   Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.message}');
+    stdout.writeln('${record.level.name}: ${record.message}');
   });
 
   final config = Config(

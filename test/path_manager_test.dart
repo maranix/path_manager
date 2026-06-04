@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart' as pkg_ffi;
 import 'package:objective_c/objective_c.dart';
+import 'package:path_manager/src/platform_path_manager.dart';
 import 'package:test/test.dart';
 import 'package:path_manager/path_manager.dart';
 

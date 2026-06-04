@@ -1,8 +1,9 @@
 import 'dart:io';
-import 'package:jni/jni.dart';
-import 'package:jni_flutter/jni_flutter.dart';
+import 'package:jni/jni.dart' as jni;
+import 'package:jni_flutter/jni_flutter.dart' as jnif;
+
+import './platform_path_manager.dart';
 import '../bindings/android/bindings.g.dart' as android_jni;
-import 'platform_path_manager.dart';
 
 /// The Android implementation of [PlatformPathManager] using JNI via FFI.
 ///
@@ -16,7 +17,8 @@ class AndroidPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getTemporaryPath() async {
-    final context = androidApplicationContext.as(android_jni.Context.type);
+    final context = jnif.androidApplicationContext.as(android_jni.Context.type);
+
     try {
       final cacheDir = context.cacheDir;
       if (cacheDir == null) return null;
@@ -32,7 +34,8 @@ class AndroidPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getApplicationSupportPath() async {
-    final context = androidApplicationContext.as(android_jni.Context.type);
+    final context = jnif.androidApplicationContext.as(android_jni.Context.type);
+
     try {
       final filesDir = context.filesDir;
       if (filesDir == null) return null;
@@ -48,7 +51,8 @@ class AndroidPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getDocumentsPath() async {
-    final context = androidApplicationContext.as(android_jni.Context.type);
+    final context = jnif.androidApplicationContext.as(android_jni.Context.type);
+
     try {
       final filesDir = context.filesDir;
       if (filesDir == null) return null;
@@ -64,7 +68,8 @@ class AndroidPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getCachesPath() async {
-    final context = androidApplicationContext.as(android_jni.Context.type);
+    final context = jnif.androidApplicationContext.as(android_jni.Context.type);
+
     try {
       final cacheDir = context.cacheDir;
       if (cacheDir == null) return null;

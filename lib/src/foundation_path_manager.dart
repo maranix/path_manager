@@ -1,10 +1,12 @@
-import 'dart:ffi';
 import 'dart:io';
+import 'dart:ffi' as ffi;
+
 import 'package:ffi/ffi.dart' as pkg_ffi;
-import 'package:objective_c/objective_c.dart';
-import 'package:path_manager/bindings/foundation/bindings.g.dart';
-import 'package:path_manager/path_manager.dart';
-import 'platform_path_manager.dart';
+import 'package:objective_c/objective_c.dart' as objc;
+
+import './exceptions.dart';
+import './platform_path_manager.dart';
+import '../bindings/foundation/bindings.g.dart';
 
 /// The iOS/macOS implementation of [PlatformPathManager] using Apple Foundation APIs via FFI.
 ///
@@ -20,7 +22,7 @@ class FoundationPathManager extends PlatformPathManager {
   FoundationPathManager() {
     // Foundation is already loaded in the host process on Apple platforms.
     // Instantiate FoundationFFI to register classes and selectors.
-    FoundationFFI(DynamicLibrary.process());
+    FoundationFFI(ffi.DynamicLibrary.process());
   }
 
   @override
@@ -45,10 +47,12 @@ class FoundationPathManager extends PlatformPathManager {
     NSSearchPathDirectory.NSCachesDirectory,
   );
 
-  Future<String?> _getPathForDirectory(NSSearchPathDirectory directory) async {
+  Future<String?> _getPathForDirectory(
+    NSSearchPathDirectory directory,
+  ) async {
     final manager = NSFileManager.getDefaultManager();
 
-    // NSSearchPathDomainMask.NSUserDomainMask = 1
+    // objc.NSSearchPathDomainMask.NSUserDomainMask = 1
     final url = manager.URLForDirectory(
       directory,
       inDomain: 1,
@@ -71,15 +75,15 @@ class FoundationPathManager extends PlatformPathManager {
     }
 
     // Check if the directory is already excluded from backup
-    final nsPath = NSString(noBackupPath);
-    final url = NSURL.fileURLWithPath(nsPath);
-    final key = NSString('NSURLIsExcludedFromBackupKey');
-    final valPtrPtr = pkg_ffi.calloc<Pointer<ObjCObjectImpl>>();
+    final nsPath = objc.NSString(noBackupPath);
+    final url = objc.NSURL.fileURLWithPath(nsPath);
+    final key = objc.NSString('NSURLIsExcludedFromBackupKey');
+    final valPtrPtr = pkg_ffi.calloc<ffi.Pointer<objc.ObjCObjectImpl>>();
     bool isExcluded = false;
     try {
       final success = url.getResourceValue(valPtrPtr, forKey: key);
-      if (success && valPtrPtr.value != nullptr) {
-        final getVal = NSNumber.fromPointer(
+      if (success && valPtrPtr.value != ffi.nullptr) {
+        final getVal = objc.NSNumber.fromPointer(
           valPtrPtr.value,
           retain: true,
           release: true,
@@ -113,10 +117,10 @@ class FoundationPathManager extends PlatformPathManager {
     bool exclude,
   ) async {
     try {
-      final nsPath = NSString(path);
-      final url = NSURL.fileURLWithPath(nsPath);
-      final key = NSString('NSURLIsExcludedFromBackupKey');
-      final value = NSNumberCreation.numberWithBool(exclude);
+      final nsPath = objc.NSString(path);
+      final url = objc.NSURL.fileURLWithPath(nsPath);
+      final key = objc.NSString('NSURLIsExcludedFromBackupKey');
+      final value = objc.NSNumberCreation.numberWithBool(exclude);
       final success = url.setResourceValue(value, forKey: key);
       if (!success) {
         throw FileSystemException(

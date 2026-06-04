@@ -1,5 +1,3 @@
-import 'dart:async';
-
 /// The platform-specific interface contract for resolving directory paths.
 ///
 /// Implementations of this class register themselves via the static [instance]

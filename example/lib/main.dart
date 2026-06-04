@@ -66,7 +66,10 @@ class _MyAppState extends State<MyApp> {
               : ListView(
                   children: [
                     _buildPathCard('Temporary Directory', _temporaryDirectory),
-                    _buildPathCard('Application Support Directory', _applicationSupportDirectory),
+                    _buildPathCard(
+                      'Application Support Directory',
+                      _applicationSupportDirectory,
+                    ),
                     _buildPathCard('Documents Directory', _documentsDirectory),
                     _buildPathCard('Caches Directory', _cachesDirectory),
                   ],
@@ -86,10 +89,7 @@ class _MyAppState extends State<MyApp> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(

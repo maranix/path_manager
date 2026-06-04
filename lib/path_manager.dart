@@ -22,7 +22,9 @@ abstract final class PathManager {
   static Future<Directory> getTemporaryDirectory() async {
     final String? path = await PlatformPathManager.instance.getTemporaryPath();
     if (path == null) {
-      throw MissingPlatformDirectoryException('Unable to get temporary directory');
+      throw MissingPlatformDirectoryException(
+        'Unable to get temporary directory',
+      );
     }
     return Directory(path);
   }
@@ -30,9 +32,12 @@ abstract final class PathManager {
   /// Path to a directory where the application may place data that is
   /// user-generated, or that cannot otherwise be recreated by your application.
   static Future<Directory> getApplicationSupportDirectory() async {
-    final String? path = await PlatformPathManager.instance.getApplicationSupportPath();
+    final String? path = await PlatformPathManager.instance
+        .getApplicationSupportPath();
     if (path == null) {
-      throw MissingPlatformDirectoryException('Unable to get application support directory');
+      throw MissingPlatformDirectoryException(
+        'Unable to get application support directory',
+      );
     }
     return Directory(path);
   }
@@ -41,7 +46,9 @@ abstract final class PathManager {
   static Future<Directory> getApplicationDocumentsDirectory() async {
     final String? path = await PlatformPathManager.instance.getDocumentsPath();
     if (path == null) {
-      throw MissingPlatformDirectoryException('Unable to get application documents directory');
+      throw MissingPlatformDirectoryException(
+        'Unable to get application documents directory',
+      );
     }
     return Directory(path);
   }
@@ -53,5 +60,19 @@ abstract final class PathManager {
       throw MissingPlatformDirectoryException('Unable to get caches directory');
     }
     return Directory(path);
+  }
+
+  /// Sets whether the file or directory at [path] should be excluded from backups.
+  ///
+  /// On iOS and macOS, this sets the `NSURLIsExcludedFromBackupKey` resource value.
+  /// Other platforms throw an [UnimplementedError].
+  static Future<void> setApplicationPathIsExcludedFromBackup(
+    String path,
+    bool exclude,
+  ) async {
+    await PlatformPathManager.instance.setApplicationPathIsExcludedFromBackup(
+      path,
+      exclude,
+    );
   }
 }

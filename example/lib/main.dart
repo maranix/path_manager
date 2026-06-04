@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_manager/path_manager.dart';
 
@@ -13,10 +14,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String? _temporaryPath;
-  String? _applicationSupportPath;
-  String? _documentsPath;
-  String? _cachesPath;
+  Directory? _temporaryDirectory;
+  Directory? _applicationSupportDirectory;
+  Directory? _documentsDirectory;
+  Directory? _cachesDirectory;
   String? _error;
 
   @override
@@ -27,15 +28,15 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _loadPaths() async {
     try {
-      final temp = await PathManager.getTemporaryPath();
-      final appSupport = await PathManager.getApplicationSupportPath();
-      final docs = await PathManager.getDocumentsPath();
-      final caches = await PathManager.getCachesPath();
+      final temp = await PathManager.getTemporaryDirectory();
+      final appSupport = await PathManager.getApplicationSupportDirectory();
+      final docs = await PathManager.getApplicationDocumentsDirectory();
+      final caches = await PathManager.getCachesDirectory();
       setState(() {
-        _temporaryPath = temp;
-        _applicationSupportPath = appSupport;
-        _documentsPath = docs;
-        _cachesPath = caches;
+        _temporaryDirectory = temp;
+        _applicationSupportDirectory = appSupport;
+        _documentsDirectory = docs;
+        _cachesDirectory = caches;
       });
     } catch (e) {
       setState(() {
@@ -64,10 +65,10 @@ class _MyAppState extends State<MyApp> {
                 )
               : ListView(
                   children: [
-                    _buildPathCard('Temporary Path', _temporaryPath),
-                    _buildPathCard('Application Support Path', _applicationSupportPath),
-                    _buildPathCard('Documents Path', _documentsPath),
-                    _buildPathCard('Caches Path', _cachesPath),
+                    _buildPathCard('Temporary Directory', _temporaryDirectory),
+                    _buildPathCard('Application Support Directory', _applicationSupportDirectory),
+                    _buildPathCard('Documents Directory', _documentsDirectory),
+                    _buildPathCard('Caches Directory', _cachesDirectory),
                   ],
                 ),
         ),
@@ -75,7 +76,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Widget _buildPathCard(String title, String? path) {
+  Widget _buildPathCard(String title, Directory? directory) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Padding(
@@ -92,10 +93,10 @@ class _MyAppState extends State<MyApp> {
             ),
             const SizedBox(height: 8),
             Text(
-              path ?? 'Loading...',
+              directory?.path ?? 'Loading...',
               style: TextStyle(
                 fontFamily: 'monospace',
-                color: path != null ? Colors.greenAccent : Colors.grey,
+                color: directory != null ? Colors.greenAccent : Colors.grey,
               ),
             ),
           ],

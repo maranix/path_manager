@@ -5,7 +5,15 @@ import '../bindings/android/bindings.g.dart' as android_jni;
 import 'platform_path_manager.dart';
 
 /// The Android implementation of [PlatformPathManager] using JNI via FFI.
+///
+/// This class handles directory path resolutions by communicating with the
+/// Android platform APIs using the generated JNI bindings.
 class AndroidPathManager extends PlatformPathManager {
+  /// Registers the Android implementation of [PlatformPathManager].
+  static void registerWith() {
+    PlatformPathManager.instance = AndroidPathManager();
+  }
+
   @override
   Future<String?> getTemporaryPath() async {
     final context = androidApplicationContext.as(android_jni.Context.type);

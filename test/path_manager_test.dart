@@ -6,6 +6,14 @@ import 'package:test/test.dart';
 import 'package:path_manager/path_manager.dart';
 
 void main() {
+  setUpAll(() {
+    if (Platform.isMacOS || Platform.isIOS) {
+      PlatformPathManager.instance = FoundationPathManager();
+    } else if (Platform.isAndroid) {
+      PlatformPathManager.instance = AndroidPathManager();
+    }
+  });
+
   group('PathManager tests', () {
     test('getTemporaryDirectory returns a valid directory', () async {
       final dir = await PathManager.getTemporaryDirectory();

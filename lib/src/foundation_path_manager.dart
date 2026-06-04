@@ -7,7 +7,15 @@ import 'package:path_manager/path_manager.dart';
 import 'platform_path_manager.dart';
 
 /// The iOS/macOS implementation of [PlatformPathManager] using Apple Foundation APIs via FFI.
+///
+/// This class handles directory path resolutions by communicating with the
+/// macOS/iOS platform APIs using Objective-C FFI bindings.
 class FoundationPathManager extends PlatformPathManager {
+  /// Registers the iOS/macOS implementation of [PlatformPathManager].
+  static void registerWith() {
+    PlatformPathManager.instance = FoundationPathManager();
+  }
+
   /// Creates a new [FoundationPathManager] and registers selectors.
   FoundationPathManager() {
     // Foundation is already loaded in the host process on Apple platforms.

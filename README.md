@@ -1,71 +1,208 @@
 # path_manager
 
-A Flutter plugin for unified access to commonly used directories on Apple (iOS/macOS) and Android platforms using native FFI bindings (`package:objective_c` and `package:jni`).
+A high-performance, robust Flutter plugin providing unified access to commonly used host filesystem directories on Android, iOS, and macOS. 
 
-## Features
-
-- Retrieve unified directories: temporary, application support, documents, and caches.
-- Mark specific files and directories as excluded from backups on iOS/macOS (`setApplicationPathIsExcludedFromBackup`).
-- Obtain a dedicated non-backed-up directory (`getApplicationNoBackupPath`) which is automatically excluded from backups.
-
-## Usage
-
-### Getting the No-Backup Directory Path
-
-To get a directory that is excluded from cloud/iTunes backups:
-
-```dart
-import 'package:path_manager/path_manager.dart';
-
-final path = await PathManager.getApplicationNoBackupPath();
-// On iOS/macOS, this is automatically created and marked as excluded from backups.
-// On Android, this creates a `__no_backup__` subfolder inside the files directory.
-```
-
-### Excluding specific paths (iOS/macOS only)
-
-On iOS and macOS, you can programmatically exclude any arbitrary file or folder from backups:
-
-```dart
-import 'package:path_manager/path_manager.dart';
-
-await PathManager.setApplicationPathIsExcludedFromBackup('/path/to/exclude', true);
-```
-
-> [!WARNING]
-> Calling `setApplicationPathIsExcludedFromBackup` on Android will throw an `UnsupportedError`. Android does not support setting backup exclusion programmatically at runtime on arbitrary paths.
+This plugin leverages direct native interop using **Java Native Interface (JNI)** via `package:jni`/`package:jni_flutter` on Android, and **Objective-C FFI** via `package:objective_c` on iOS and macOS. This eliminates MethodChannel overhead, providing zero-copy performance and direct runtime execution.
 
 ---
 
-## Platform Specifics
+## Platform & Method Support
+
+| Method | Android | iOS | macOS | Description |
+|---|---|---|---|---|
+| `getTemporaryDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Temporary directory for cache files (subject to OS cleanup). |
+| `getApplicationSupportDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Application-created directory for app state, databases, etc. |
+| `getApplicationDocumentsDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | User-accessible directory for persistent documents/profiles. |
+| `getCachesDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Cache directory (persists longer than temporary files). |
+| `getApplicationNoBackupPath()` | ✅ Supported | ✅ Supported | ✅ Supported | Resolves a self-healing `__no_backup__` directory. |
+| `setApplicationPathIsExcludedFromBackup(...)` | ❌ Natively Throws | ✅ Supported | ✅ Supported | Programmatically toggles the backup exclusion flag. |
+
+---
+
+## Features
+
+- **Direct interop**: Built completely with JNI and FFI interop—no MethodChannels.
+- **Tree-shakeable architecture**: Uses Flutter's `dartPluginClass` registration. Android classes and `jni` dependencies are entirely compiled out of Apple builds, and Apple classes and `objective_c` dependencies are compiled out of Android builds.
+- **Dedicated No-Backup Directories**: Provides a self-healing folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems.
+- **Custom exclusions**: Mark any arbitrary file or folder on iOS/macOS to be skipped during iCloud/iTunes backups.
+
+---
+
+## Installation
+
+Add `path_manager` to your `pubspec.yaml` dependencies:
+
+```yaml
+dependencies:
+  path_manager:
+    path: path/to/path_manager # or ^x.y.z from pub.dev when published
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+---
+
+## Configuration
 
 ### iOS & macOS
-No additional setup is required. The library uses Apple's native Foundation APIs (`NSURLIsExcludedFromBackupKey`) via Objective-C bindings to exclude directories and files from iTunes and iCloud backups.
+
+No additional setup is required. The plugin programmatically sets the `NSURLIsExcludedFromBackupKey` resource key using iOS/macOS Foundation APIs when managing exclusions.
 
 ### Android
-On Android, backup exclusion rules are configured statically in XML files rather than programmatically at runtime. 
 
-To ensure that the `__no_backup__` directory (returned by `getApplicationNoBackupPath`) is excluded from Auto Backup and Key-Value Backup, you must manually define and configure backup rules in your application's Android resource files:
+On Android, programmatic runtime backup exclusion on arbitrary filesystem entities is not supported by the OS. Instead, Android backup exclusions are configured statically via resource XML files.
 
-#### 1. Define Backup Rules
-Create a file named `backup_rules.xml` in your Android project's `res/xml` directory (e.g., `android/app/src/main/res/xml/backup_rules.xml`):
+To exclude the default `__no_backup__` directory (which resolves to `app_support_path/__no_backup__`) from Android Auto Backup and Device-to-Device transfer, follow these setup steps:
+
+#### 1. Define Backup Rules (Android 11 and lower)
+Create a file named `backup_rules.xml` in your Android project's resource directory (`android/app/src/main/res/xml/backup_rules.xml`):
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- Exclude __no_backup__ directory under files/ from backups -->
+    <!-- Exclude the __no_backup__ subdirectory inside the application files directory -->
     <exclude domain="file" path="__no_backup__" />
 </full-backup-content>
 ```
 
-*(Note: For Android 12 / API 31 and above, you should define these rules in `data_extraction_rules.xml` using the `<device-transfer>` and `<cloud-backup>` elements).*
+#### 2. Define Data Extraction Rules (Android 12 / API 31 and above)
+Create a file named `data_extraction_rules.xml` in your Android project's resource directory (`android/app/src/main/res/xml/data_extraction_rules.xml`):
 
-#### 2. Link Rules in `AndroidManifest.xml`
-In your `android/app/src/main/AndroidManifest.xml` file, link the backup rules file in the `<application>` tag:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Exclude from Cloud Backups -->
+        <exclude domain="file" path="__no_backup__" />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Exclude from Device-to-Device Transfer -->
+        <exclude domain="file" path="__no_backup__" />
+    </device-transfer>
+</data-extraction-rules>
+```
+
+#### 3. Register XML Rules in `AndroidManifest.xml`
+In your `android/app/src/main/AndroidManifest.xml` file, link the rules inside the `<application>` element:
 
 ```xml
 <application
     android:allowBackup="true"
     android:fullBackupContent="@xml/backup_rules"
+    android:dataExtractionRules="@xml/data_extraction_rules"
     ... >
 ```
+
+---
+
+## Usage
+
+### 1. Retrieving Standard Directories
+
+```dart
+import 'package:path_manager/path_manager.dart';
+
+// Retrieve paths as standard dart:io Directory instances
+final Directory temp = await PathManager.getTemporaryDirectory();
+final Directory support = await PathManager.getApplicationSupportDirectory();
+final Directory docs = await PathManager.getApplicationDocumentsDirectory();
+final Directory caches = await PathManager.getCachesDirectory();
+
+print('Support Dir: ${support.path}');
+```
+
+### 2. Getting the Dedicated No-Backup Path
+
+The `getApplicationNoBackupPath()` method provides a dedicated, self-healing path. If the directory does not exist, it creates it and (on Apple platforms) marks it as excluded from backups.
+
+```dart
+import 'dart:io';
+import 'package:path_manager/path_manager.dart';
+
+try {
+  final String noBackupPath = await PathManager.getApplicationNoBackupPath();
+  final File localConfig = File('$noBackupPath/settings.json');
+  await localConfig.writeAsString('{"offline_mode": true}');
+  print('Saved sensitive offline settings to: $noBackupPath');
+} on BackupExclusionConflictException catch (e) {
+  // Occurs if the __no_backup__ folder exists but was manually un-excluded
+  print('Conflict detected: ${e.message}');
+} on MissingPlatformDirectoryException catch (e) {
+  print('Failed to resolve path: ${e.message}');
+}
+```
+
+### 3. Programmatic Backup Exclusion (iOS & macOS Only)
+
+You can programmatically exclude individual files or directories on iOS and macOS.
+
+```dart
+import 'dart:io';
+import 'package:path_manager/path_manager.dart';
+
+final Directory docsDir = await PathManager.getApplicationDocumentsDirectory();
+final File localDatabase = File('${docsDir.path}/app_db.sqlite');
+
+try {
+  // Exclude the SQLite file from iCloud/iTunes backups
+  await PathManager.setApplicationPathIsExcludedFromBackup(localDatabase.path, true);
+  print('Successfully excluded local database from backups.');
+} on UnsupportedError catch (e) {
+  // Thrown on Android
+  print('Programmatic exclusions are not supported on this platform: ${e.message}');
+} on FileSystemException catch (e) {
+  // Thrown if the target file/directory does not exist
+  print('Filesystem error: ${e.message}');
+}
+```
+
+---
+
+## Under the Hood: Tree-Shaking FFI & JNI
+
+To ensure optimal compilation and minimum binary footprint, this package avoids static import references to platform-specific code in its core interface class. Instead, it defines platform implementations in separate files (`android_path_manager.dart` and `foundation_path_manager.dart`) and registers them dynamically using Flutter's `dartPluginClass` directive.
+
+When compiling for iOS/macOS, the Dart compiler detects that `AndroidPathManager` is never instantiated, and tree-shakes the Android bindings and `package:jni`/`package:jni_flutter` completely. Conversely, when compiling for Android, the compiler tree-shakes `FoundationPathManager` and `package:objective_c`.
+
+---
+
+## Contributing
+
+We welcome contributions to this project!
+
+### Setting Up For Local Development
+
+1. Clone the repository and run dependencies setup:
+   ```bash
+   flutter pub get
+   ```
+2. Generate FFI/JNI bindings:
+   - For Android (requires `JAVA_HOME` pointing to a JDK):
+     ```bash
+     dart run tools/jnigen.dart
+     ```
+   - For iOS/macOS:
+     ```bash
+     dart run ffigen --config ffigen.yaml
+     ```
+3. Format all files before pushing:
+   ```bash
+   dart format .
+   ```
+
+### Running Tests
+
+Run the test suite on your development machine (macOS/Linux/Windows):
+```bash
+dart test
+```
+
+---
+
+## License
+
+This package is licensed under the MIT License. See `LICENSE` for more details.

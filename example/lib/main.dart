@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:path_manager/path_manager.dart' as path_manager;
+import 'package:path_manager/path_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,57 +13,92 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late int sumResult;
-  late Future<int> sumAsyncResult;
+  String? _temporaryPath;
+  String? _applicationSupportPath;
+  String? _documentsPath;
+  String? _cachesPath;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    sumResult = path_manager.sum(1, 2);
-    sumAsyncResult = path_manager.sumAsync(3, 4);
+    _loadPaths();
+  }
+
+  Future<void> _loadPaths() async {
+    try {
+      final temp = await PathManager.getTemporaryPath();
+      final appSupport = await PathManager.getApplicationSupportPath();
+      final docs = await PathManager.getDocumentsPath();
+      final caches = await PathManager.getCachesPath();
+      setState(() {
+        _temporaryPath = temp;
+        _applicationSupportPath = appSupport;
+        _documentsPath = docs;
+        _cachesPath = caches;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    const textStyle = TextStyle(fontSize: 25);
-    const spacerSmall = SizedBox(height: 10);
     return MaterialApp(
+      theme: ThemeData.dark(useMaterial3: true),
       home: Scaffold(
-        appBar: AppBar(title: const Text('Native Packages')),
-        body: SingleChildScrollView(
-          child: Container(
-            padding: const .all(10),
-            child: Column(
-              children: [
-                const Text(
-                  'This calls a native function through FFI that is shipped as source in the package. '
-                  'The native code is built as part of the Flutter Runner build.',
-                  style: textStyle,
-                  textAlign: .center,
+        appBar: AppBar(
+          title: const Text('PathManager Example'),
+          centerTitle: true,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _error != null
+              ? Center(
+                  child: Text(
+                    'Error: $_error',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                )
+              : ListView(
+                  children: [
+                    _buildPathCard('Temporary Path', _temporaryPath),
+                    _buildPathCard('Application Support Path', _applicationSupportPath),
+                    _buildPathCard('Documents Path', _documentsPath),
+                    _buildPathCard('Caches Path', _cachesPath),
+                  ],
                 ),
-                spacerSmall,
-                Text(
-                  'sum(1, 2) = $sumResult',
-                  style: textStyle,
-                  textAlign: .center,
-                ),
-                spacerSmall,
-                FutureBuilder<int>(
-                  future: sumAsyncResult,
-                  builder: (BuildContext context, AsyncSnapshot<int> value) {
-                    final displayValue = (value.hasData)
-                        ? value.data
-                        : 'loading';
-                    return Text(
-                      'await sumAsync(3, 4) = $displayValue',
-                      style: textStyle,
-                      textAlign: .center,
-                    );
-                  },
-                ),
-              ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPathCard(String title, String? path) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              path ?? 'Loading...',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                color: path != null ? Colors.greenAccent : Colors.grey,
+              ),
+            ),
+          ],
         ),
       ),
     );

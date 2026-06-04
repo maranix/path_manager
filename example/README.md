@@ -1,17 +1,46 @@
 # path_manager_example
 
-Demonstrates how to use the path_manager package.
+A Flutter application demonstrating the usage and capabilities of the `path_manager` plugin.
+
+## Features Demonstrated
+
+This example project provides a hands-on implementation of the core `path_manager` APIs:
+- **Unified Path Resolution**: Displays paths resolved at runtime for:
+  - Temporary Directory
+  - Application Support Directory
+  - Documents Directory
+  - Caches Directory
+  - Excluded No-Backup Directory (`__no_backup__`)
+- **Interactive Backup Exclusion Test**: Includes a testing card that allows you to trigger a manual backup exclusion request programmatically. This highlights how:
+  - iOS and macOS successfully apply the exclusion attributes.
+  - Android catches and logs the expected `UnsupportedError`, showing how to safely design fallback logic.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Prerequisites
 
-A few resources to get you started if this is your first Flutter project:
+Ensure you have a configured Flutter environment on your development machine.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### Running the Example
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Navigate to the example directory:
+   ```bash
+   cd example
+   ```
+2. Retrieve the project dependencies:
+   ```bash
+   flutter pub get
+   ```
+3. Run the application:
+   - For macOS desktop target:
+     ```bash
+     flutter run -d macos
+     ```
+   - For Android (requires a running emulator or connected device):
+     ```bash
+     flutter run -d android
+     ```
+   - For iOS (requires Xcode and a running simulator):
+     ```bash
+     flutter run -d ios
+     ```

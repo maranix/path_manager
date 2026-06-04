@@ -14,7 +14,7 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 | `getApplicationSupportDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Application-created directory for app state, databases, etc. |
 | `getApplicationDocumentsDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | User-accessible directory for persistent documents/profiles. |
 | `getCachesDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Cache directory (persists longer than temporary files). |
-| `getApplicationNoBackupPath()` | ✅ Supported | ✅ Supported | ✅ Supported | Resolves a self-healing `__no_backup__` directory. |
+| `getApplicationNoBackupPath()` | ✅ Supported | ✅ Supported | ✅ Supported | Resolves a default directory that is excluded from backups. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ Natively Throws | ✅ Supported | ✅ Supported | Programmatically toggles the backup exclusion flag. |
 
 ---
@@ -22,8 +22,8 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 ## Features
 
 - **Direct interop**: Built completely with JNI and FFI interop—no MethodChannels.
-- **Tree-shakeable architecture**: Uses Flutter's `dartPluginClass` registration. Android classes and `jni` dependencies are entirely compiled out of Apple builds, and Apple classes and `objective_c` dependencies are compiled out of Android builds.
-- **Dedicated No-Backup Directories**: Provides a self-healing folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems.
+- **Tree-shakeable architecture**: Uses Flutter's `dartPluginClass` registration. Platform-specific code and dependencies are only compiled and included for their target platform.
+- **Dedicated No-Backup Directories**: Provides a default folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems.
 - **Custom exclusions**: Mark any arbitrary file or folder on iOS/macOS to be skipped during iCloud/iTunes backups.
 
 ---
@@ -117,7 +117,7 @@ print('Support Dir: ${support.path}');
 
 ### 2. Getting the Dedicated No-Backup Path
 
-The `getApplicationNoBackupPath()` method provides a dedicated, self-healing path. If the directory does not exist, it creates it and (on Apple platforms) marks it as excluded from backups.
+The `getApplicationNoBackupPath()` method provides a default directory path. If the directory does not exist, it is automatically created and (on Apple platforms) marked as excluded from backups.
 
 ```dart
 import 'dart:io';
@@ -159,14 +159,6 @@ try {
   print('Filesystem error: ${e.message}');
 }
 ```
-
----
-
-## Under the Hood: Tree-Shaking FFI & JNI
-
-To ensure optimal compilation and minimum binary footprint, this package avoids static import references to platform-specific code in its core interface class. Instead, it defines platform implementations in separate files (`android_path_manager.dart` and `foundation_path_manager.dart`) and registers them dynamically using Flutter's `dartPluginClass` directive.
-
-When compiling for iOS/macOS, the Dart compiler detects that `AndroidPathManager` is never instantiated, and tree-shakes the Android bindings and `package:jni`/`package:jni_flutter` completely. Conversely, when compiling for Android, the compiler tree-shakes `FoundationPathManager` and `package:objective_c`.
 
 ---
 

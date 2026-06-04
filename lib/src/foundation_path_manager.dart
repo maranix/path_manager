@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart' as pkg_ffi;
 import 'package:objective_c/objective_c.dart';
 import 'package:path_manager/bindings/foundation/bindings.g.dart';
+import 'package:path_manager/path_manager.dart';
 import 'platform_path_manager.dart';
 
 /// The iOS/macOS implementation of [PlatformPathManager] using Apple Foundation APIs via FFI.
@@ -56,7 +57,8 @@ class FoundationPathManager extends PlatformPathManager {
 
     final noBackupPath = '$supportPath/__no_backup__';
     final dir = Directory(noBackupPath);
-    if (!await dir.exists()) {
+    final bool alreadyExists = await dir.exists();
+    if (!alreadyExists) {
       await dir.create(recursive: true);
     }
 
@@ -83,6 +85,14 @@ class FoundationPathManager extends PlatformPathManager {
     }
 
     if (!isExcluded) {
+      if (alreadyExists) {
+        throw BackupExclusionConflictException(
+          noBackupPath,
+          'The __no_backup__ directory already exists but is not marked as excluded from backup. '
+          'Since it exists without the exclusion flag, it is assumed to have been created manually. '
+          'Please delete the directory or mark it as excluded.',
+        );
+      }
       await setApplicationPathIsExcludedFromBackup(noBackupPath, true);
     }
 

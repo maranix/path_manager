@@ -114,7 +114,7 @@ void main() {
     );
 
     test(
-      'getApplicationNoBackupPath returns a valid path and ensures backup exclusion',
+      'getApplicationNoBackupPath returns a valid path, ensures backup exclusion, and throws BackupExclusionConflictException if existing directory is not excluded',
       () async {
         bool getIsExcluded(String path) {
           final nsPath = NSString(path);
@@ -136,24 +136,39 @@ void main() {
           }
         }
 
-        final noBackupPath = await PathManager.getApplicationNoBackupPath();
-        expect(noBackupPath, isNotEmpty);
+        // Clean up pre-existing state
+        final supportDir = await PathManager.getApplicationSupportDirectory();
+        final noBackupDir = Directory('${supportDir.path}/__no_backup__');
+        if (await noBackupDir.exists()) {
+          await noBackupDir.delete(recursive: true);
+        }
 
-        final dir = Directory(noBackupPath);
-        expect(dir.existsSync(), isTrue);
-        expect(getIsExcluded(noBackupPath), isTrue);
+        try {
+          final noBackupPath = await PathManager.getApplicationNoBackupPath();
+          expect(noBackupPath, isNotEmpty);
 
-        // Manually set exclusion to false to test self-healing
-        await PathManager.setApplicationPathIsExcludedFromBackup(
-          noBackupPath,
-          false,
-        );
-        expect(getIsExcluded(noBackupPath), isFalse);
+          final dir = Directory(noBackupPath);
+          expect(dir.existsSync(), isTrue);
+          expect(getIsExcluded(noBackupPath), isTrue);
 
-        // Querying the path again should heal/re-exclude the directory
-        final noBackupPath2 = await PathManager.getApplicationNoBackupPath();
-        expect(noBackupPath2, equals(noBackupPath));
-        expect(getIsExcluded(noBackupPath), isTrue);
+          // Manually set exclusion to false to test exception throwing when the directory already exists
+          await PathManager.setApplicationPathIsExcludedFromBackup(
+            noBackupPath,
+            false,
+          );
+          expect(getIsExcluded(noBackupPath), isFalse);
+
+          // Querying the path again should now throw BackupExclusionConflictException
+          expect(
+            () => PathManager.getApplicationNoBackupPath(),
+            throwsA(isA<BackupExclusionConflictException>()),
+          );
+        } finally {
+          // Clean up the created directory to leave a clean state
+          if (await noBackupDir.exists()) {
+            await noBackupDir.delete(recursive: true);
+          }
+        }
       },
     );
   });

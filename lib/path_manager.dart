@@ -15,6 +15,22 @@ class MissingPlatformDirectoryException implements Exception {
   String toString() => 'MissingPlatformDirectoryException: $message';
 }
 
+/// Exception thrown when a user-created directory at the designated no-backup path is not excluded from backup.
+class BackupExclusionConflictException implements Exception {
+  /// The path to the directory that caused the conflict.
+  final String path;
+
+  /// Message explaining the conflict.
+  final String message;
+
+  /// Creates a new [BackupExclusionConflictException].
+  BackupExclusionConflictException(this.path, this.message);
+
+  @override
+  String toString() =>
+      'BackupExclusionConflictException: $message (path: $path)';
+}
+
 /// A class providing unified access to commonly used directories on the host file system.
 abstract final class PathManager {
   /// Path to the temporary directory on the device that is not backed up and is

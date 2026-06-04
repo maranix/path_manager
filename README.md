@@ -18,7 +18,7 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 | `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
 | `getCachesDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
 | `getApplicationNoBackupPath()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
-| `setApplicationPathIsExcludedFromBackup(...)` | ❌ Natively Throws | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
+| `setApplicationPathIsExcludedFromBackup(...)` | ❌ Throws | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
 
 ---
 
@@ -182,7 +182,7 @@ We welcome contributions to this project!
      ```
    - For iOS/macOS:
      ```bash
-     dart run ffigen --config ffigen.yaml
+     dart run tools/ffigen.dart
      ```
 3. Format all files before pushing:
    ```bash

@@ -1,8 +1,11 @@
-# path_manager
+# Path Manager
 
-A high-performance, robust Flutter plugin providing unified access to commonly used host filesystem directories on Android, iOS, and macOS. 
+[![Pub Version](https://img.shields.io/pub/v/path_manager)](https://pub.dev/packages/path_manager)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-This plugin leverages direct native interop using **Java Native Interface (JNI)** via `package:jni`/`package:jni_flutter` on Android, and **Objective-C FFI** via `package:objective_c` on iOS and macOS. This eliminates MethodChannel overhead, providing zero-copy performance and direct runtime execution.
+A plugin providing unified access to commonly used host filesystem directories on Android, iOS, and macOS. 
+
+This plugin leverages direct native interop using **Java Native Interface (JNI)** on Android, and **Objective-C FFI** on iOS and macOS.
 
 ---
 
@@ -10,19 +13,19 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 
 | Method | Android | iOS | macOS | Description |
 |---|---|---|---|---|
-| `getTemporaryDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Temporary directory for cache files (subject to OS cleanup). |
-| `getApplicationSupportDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Application-created directory for app state, databases, etc. |
-| `getApplicationDocumentsDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | User-accessible directory for persistent documents/profiles. |
-| `getCachesDirectory()` | ✅ Supported | ✅ Supported | ✅ Supported | Cache directory (persists longer than temporary files). |
-| `getApplicationNoBackupPath()` | ✅ Supported | ✅ Supported | ✅ Supported | Resolves a default directory that is excluded from backups. |
-| `setApplicationPathIsExcludedFromBackup(...)` | ❌ Natively Throws | ✅ Supported | ✅ Supported | Programmatically toggles the backup exclusion flag. |
+| `getTemporaryDirectory()` | ✅ | ✅ | ✅ | Temporary directory for cache files (subject to OS cleanup). |
+| `getApplicationSupportDirectory()` | ✅ | ✅ | ✅ | Application-created directory for app state, databases, etc. |
+| `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
+| `getCachesDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
+| `getApplicationNoBackupPath()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
+| `setApplicationPathIsExcludedFromBackup(...)` | ❌ Natively Throws | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
 
 ---
 
 ## Features
 
 - **Direct interop**: Built completely with JNI and FFI interop—no MethodChannels.
-- **Tree-shakeable architecture**: Uses Flutter's `dartPluginClass` registration. Platform-specific code and dependencies are only compiled and included for their target platform.
+- **Tree shakeable**: Platform-specific code and dependencies are only compiled and included for their target platform.
 - **Dedicated No-Backup Directories**: Provides a default folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems.
 - **Custom exclusions**: Mark any arbitrary file or folder on iOS/macOS to be skipped during iCloud/iTunes backups.
 
@@ -35,7 +38,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 ```yaml
 dependencies:
   path_manager:
-    path: path/to/path_manager # or ^x.y.z from pub.dev when published
+    path: ^0.5.0
 ```
 
 Then run:

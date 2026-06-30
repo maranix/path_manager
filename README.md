@@ -18,7 +18,7 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 | `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
 | `getCachesDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
 | `getApplicationNoBackupDirectory()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
-| `setApplicationPathIsExcludedFromBackup(...)` | ❌ Throws | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
+| `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
 
 ---
 
@@ -165,46 +165,14 @@ try {
 
 ---
 
-## Contributing
-
-We welcome contributions to this project!
-
-### Setting Up For Local Development
-
-1. Clone the repository and run dependencies setup:
-   ```bash
-   flutter pub get
-   ```
-2. Generate FFI/JNI bindings:
-   - For Android (requires `JAVA_HOME` pointing to a JDK):
-     ```bash
-     dart run tools/jnigen.dart
-     ```
-   - For iOS/macOS:
-     ```bash
-     dart run tools/ffigen.dart
-     ```
-3. Format all files before pushing:
-   ```bash
-   dart format .
-   ```
-
-### Running Tests
-
-Run the test suite on your development machine (macOS/Linux/Windows):
-```bash
-dart test
-```
-
 ### Testing & Mocking
 
 Since `path_manager` resolves directories using platform-specific APIs, writing unit tests for code that uses `PathManager` can be done by providing a mock/fake implementation of `PlatformPathManager`.
 
-`PlatformPathManager` is exported publicly from `package:path_manager/path_manager.dart`.
-
 #### Writing a Mock PlatformPathManager
 
-To mock path resolution in your tests, implement `PlatformPathManager` and set `PlatformPathManager.instance` before running your tests. Remember to restore the original instance or tear it down.
+To mock path resolution in your tests, implement `PlatformPathManager` and set `PlatformPathManager.instance` before running your tests.
+Remember to restore the original instance or tear it down.
 
 ```dart
 import 'package:path_manager/path_manager.dart';
@@ -258,6 +226,39 @@ void main() {
     });
   });
 }
+```
+
+---
+
+## Contributing
+
+Contributions and suggestions are welcome to this project!
+
+### Setting Up For Local Development
+
+1. Clone the repository and run dependencies setup:
+   ```bash
+   flutter pub get
+   ```
+2. Generate FFI/JNI bindings:
+   - For Android (requires `JAVA_HOME` pointing to a JDK):
+     ```bash
+     dart run tools/jnigen.dart
+     ```
+   - For iOS/macOS:
+     ```bash
+     dart run tools/ffigen.dart
+     ```
+3. Format all files before pushing:
+   ```bash
+   dart format .
+   ```
+
+### Running Tests
+
+Run the test suite on your development machine (macOS/Linux/Windows):
+```bash
+dart test
 ```
 
 ---

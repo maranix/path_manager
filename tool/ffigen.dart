@@ -45,13 +45,6 @@ void main(List<String> args) {
           _ => false,
         },
       ),
-      // categories: fg.Categories(
-      //   include: (decl) => <String>{
-      //     // For URLByAppendingPathComponent:
-      //     'NSURLPathUtilities',
-      //   }.contains(decl.originalName),
-      //   includeTransitive: false,
-      // ),
     ),
     functions: fg.Functions.includeSet(<String>{
       'NSSearchPathForDirectoriesInDomains',

@@ -5,6 +5,7 @@ import 'src/exceptions.dart';
 export 'src/android_path_manager.dart';
 export 'src/foundation_path_manager.dart';
 export 'src/exceptions.dart';
+export 'src/platform_path_manager.dart';
 
 /// A class providing unified access to commonly used directories on the host file system.
 ///

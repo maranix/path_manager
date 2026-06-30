@@ -2,7 +2,6 @@ import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart' as pkg_ffi;
 import 'package:objective_c/objective_c.dart';
-import 'package:path_manager/src/platform_path_manager.dart';
 import 'package:test/test.dart';
 import 'package:path_manager/path_manager.dart';
 
@@ -154,7 +153,8 @@ void main() {
           }
 
           try {
-            final noBackupDirectory = await PathManager.getApplicationNoBackupDirectory();
+            final noBackupDirectory =
+                await PathManager.getApplicationNoBackupDirectory();
             expect(noBackupDirectory.path, isNotEmpty);
 
             expect(noBackupDirectory.existsSync(), isTrue);
@@ -212,4 +212,127 @@ void main() {
       );
     }
   });
+
+  group('PlatformPathManager override & mock tests', () {
+    PlatformPathManager? originalInstance;
+    late FakePlatformPathManager fakeManager;
+
+    setUp(() {
+      try {
+        originalInstance = PlatformPathManager.instance;
+      } catch (_) {
+        originalInstance = null;
+      }
+      fakeManager = FakePlatformPathManager();
+      PlatformPathManager.instance = fakeManager;
+    });
+
+    tearDown(() {
+      if (originalInstance != null) {
+        PlatformPathManager.instance = originalInstance!;
+      }
+    });
+
+    test('PathManager methods forward calls to PlatformPathManager', () async {
+      fakeManager.temporaryPath = '/fake/temp';
+      fakeManager.applicationSupportPath = '/fake/support';
+      fakeManager.documentsPath = '/fake/docs';
+      fakeManager.cachesPath = '/fake/caches';
+      fakeManager.applicationNoBackupDirectory = '/fake/nobackup';
+
+      final temp = await PathManager.getTemporaryDirectory();
+      expect(temp.path, equals('/fake/temp'));
+
+      final support = await PathManager.getApplicationSupportDirectory();
+      expect(support.path, equals('/fake/support'));
+
+      final docs = await PathManager.getApplicationDocumentsDirectory();
+      expect(docs.path, equals('/fake/docs'));
+
+      final caches = await PathManager.getCachesDirectory();
+      expect(caches.path, equals('/fake/caches'));
+
+      final noBackup = await PathManager.getApplicationNoBackupDirectory();
+      expect(noBackup.path, equals('/fake/nobackup'));
+
+      await PathManager.setApplicationPathIsExcludedFromBackup(
+        '/fake/file',
+        true,
+      );
+      expect(fakeManager.lastExcludedPath, equals('/fake/file'));
+      expect(fakeManager.lastExcludedValue, isTrue);
+    });
+
+    test(
+      'PathManager methods throw MissingPlatformDirectoryException when platform path is null',
+      () async {
+        fakeManager.temporaryPath = null;
+        fakeManager.applicationSupportPath = null;
+        fakeManager.documentsPath = null;
+        fakeManager.cachesPath = null;
+        fakeManager.applicationNoBackupDirectory = null;
+
+        expect(
+          () => PathManager.getTemporaryDirectory(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getApplicationSupportDirectory(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getApplicationDocumentsDirectory(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getCachesDirectory(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getApplicationNoBackupDirectory(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+      },
+    );
+  });
+}
+
+class FakePlatformPathManager implements PlatformPathManager {
+  String? temporaryPath;
+  String? applicationSupportPath;
+  String? documentsPath;
+  String? cachesPath;
+  String? applicationNoBackupDirectory;
+
+  String? lastExcludedPath;
+  bool? lastExcludedValue;
+  bool shouldThrowOnExclude = false;
+
+  @override
+  Future<String?> getTemporaryPath() async => temporaryPath;
+
+  @override
+  Future<String?> getApplicationSupportPath() async => applicationSupportPath;
+
+  @override
+  Future<String?> getDocumentsPath() async => documentsPath;
+
+  @override
+  Future<String?> getCachesPath() async => cachesPath;
+
+  @override
+  Future<String?> getApplicationNoBackupDirectory() async =>
+      applicationNoBackupDirectory;
+
+  @override
+  Future<void> setApplicationPathIsExcludedFromBackup(
+    String path,
+    bool exclude,
+  ) async {
+    if (shouldThrowOnExclude) {
+      throw FileSystemException('Fake file system error');
+    }
+    lastExcludedPath = path;
+    lastExcludedValue = exclude;
+  }
 }

@@ -196,6 +196,70 @@ Run the test suite on your development machine (macOS/Linux/Windows):
 dart test
 ```
 
+### Testing & Mocking
+
+Since `path_manager` resolves directories using platform-specific APIs, writing unit tests for code that uses `PathManager` can be done by providing a mock/fake implementation of `PlatformPathManager`.
+
+`PlatformPathManager` is exported publicly from `package:path_manager/path_manager.dart`.
+
+#### Writing a Mock PlatformPathManager
+
+To mock path resolution in your tests, implement `PlatformPathManager` and set `PlatformPathManager.instance` before running your tests. Remember to restore the original instance or tear it down.
+
+```dart
+import 'package:path_manager/path_manager.dart';
+import 'package:test/test.dart';
+
+class FakePlatformPathManager implements PlatformPathManager {
+  @override
+  Future<String?> getTemporaryPath() async => '/fake/temp';
+
+  @override
+  Future<String?> getApplicationSupportPath() async => '/fake/support';
+
+  @override
+  Future<String?> getDocumentsPath() async => '/fake/docs';
+
+  @override
+  Future<String?> getCachesPath() async => '/fake/caches';
+
+  @override
+  Future<String?> getApplicationNoBackupDirectory() async => '/fake/nobackup';
+
+  @override
+  Future<void> setApplicationPathIsExcludedFromBackup(String path, bool exclude) async {
+    // Handle mock exclusion logic
+  }
+}
+
+void main() {
+  group('My Service Tests', () {
+    PlatformPathManager? originalInstance;
+
+    setUp(() {
+      try {
+        originalInstance = PlatformPathManager.instance;
+      } catch (_) {
+        originalInstance = null;
+      }
+      PlatformPathManager.instance = FakePlatformPathManager();
+    });
+
+    tearDown(() {
+      if (originalInstance != null) {
+        PlatformPathManager.instance = originalInstance!;
+      }
+    });
+
+    test('should load app settings from document path', () async {
+      final docs = await PathManager.getApplicationDocumentsDirectory();
+      expect(docs.path, equals('/fake/docs'));
+      // ... test your code
+    });
+  });
+}
+```
+
 ---
 
 ## License

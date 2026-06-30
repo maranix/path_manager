@@ -112,7 +112,10 @@ class _MyAppState extends State<MyApp> {
                       _documentsDirectory?.path,
                     ),
                     _buildPathCard('Caches Directory', _cachesDirectory?.path),
-                    _buildPathCard('No Backup Directory', _noBackupDirectory?.path),
+                    _buildPathCard(
+                      'No Backup Directory',
+                      _noBackupDirectory?.path,
+                    ),
 
                     const SizedBox(height: 16),
                     Card(

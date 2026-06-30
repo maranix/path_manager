@@ -3,7 +3,7 @@ description: Plugin for getting commonly used locations on host file system via 
 homepage: https://github.com/maranix/path_manager
 repository: https://github.com/maranix/path_manager
 issues: https://github.com/maranix/path_manager/issues
-version: 0.6.0
+version: 0.6.1
 
 environment:
   sdk: ^3.12.0

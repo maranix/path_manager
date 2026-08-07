@@ -1,4 +1,4 @@
-# 0.7.0
+# 0.7.x
 
 * **Features**:
     - Add `getExternalStorageDirectory()` for retrieving primary external storage.

@@ -176,6 +176,7 @@ try {
   // Thrown if the target file/directory does not exist
   print('Filesystem error: ${e.message}');
 }
+```
 
 ### 4. External Storage & StorageDirectory Types (Android)
 
@@ -200,17 +201,11 @@ When requesting external storage directories on Android, pass values from the `S
 import 'package:path_manager/path_manager.dart';
 
 // Fetch a single external storage directory
-final Directory picturesDir = await PathManager.getExternalStorageDirectory(
-  StorageDirectory.pictures,
-);
+final Directory picturesDir = await PathManager.getExternalStorageDirectory(.pictures);
 print('Pictures Path: ${picturesDir.path}');
 
 // Fetch multiple external storage directories (defaults to all StorageDirectory.values if omitted)
-final List<Directory> mediaDirs = await PathManager.getExternalStorageDirectories([
-  StorageDirectory.pictures,
-  StorageDirectory.movies,
-]);
-```
+final List<Directory> mediaDirs = await PathManager.getExternalStorageDirectories([.pictures, .movies]);
 ```
 
 ---

@@ -1,3 +1,16 @@
+# 0.7.0
+
+* **Features**:
+    - Add `getExternalStorageDirectory()` for retrieving primary external storage.
+    - Add `getExternalStorageDirectories({StorageDirectory? type})` for typed external storage directories.
+    - Add `getExternalCacheDirectories()` for external cache directories.
+    - Add `getDownloadsDirectory()` for user/app downloads directory.
+    - Add `StorageDirectory` enum for external directory categorization.
+    - Enhance error messages on failure/misconfiguration with detailed resolution and documentation instructions.
+* **Breaking Changes**:
+    - Rename `getCachesDirectory()` to `getApplicationCacheDirectory()` for naming consistency with other `PathManager` directory getters and Flutter's `path_provider`.
+    - Rename `PlatformPathManager.getCachesPath()` to `PlatformPathManager.getApplicationCachePath()`.
+
 # 0.6.1
 
 * Export `PlatformPathManager` publicly to enable custom overrides and mocking in tests.

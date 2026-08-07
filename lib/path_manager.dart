@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'src/platform_path_manager.dart';
 import 'src/exceptions.dart';
+import 'src/storage_directory.dart';
 
 export 'src/android_path_manager.dart';
 export 'src/foundation_path_manager.dart';
 export 'src/exceptions.dart';
 export 'src/platform_path_manager.dart';
+export 'src/storage_directory.dart';
 
 /// A class providing unified access to commonly used directories on the host file system.
 ///
@@ -114,8 +116,8 @@ abstract final class PathManager {
   /// final cachedImage = File('${cacheDir.path}/avatar_cache.png');
   /// ```
   static Future<Directory> getApplicationCacheDirectory() async {
-    final String? path =
-        await PlatformPathManager.instance.getApplicationCachePath();
+    final String? path = await PlatformPathManager.instance
+        .getApplicationCachePath();
     if (path == null) {
       throw MissingPlatformDirectoryException(
         'Unable to get application cache directory',
@@ -155,6 +157,112 @@ abstract final class PathManager {
     if (path == null) {
       throw MissingPlatformDirectoryException(
         'Unable to get application no backup directory',
+      );
+    }
+    return Directory(path);
+  }
+
+  /// Gets the external storage directory on the host device for [dir].
+  ///
+  /// - **Android**: Resolves the external files directory for [dir].
+  /// - **iOS & macOS**: Unsupported. Throws an [UnsupportedError].
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final musicDir = await PathManager.getExternalStorageDirectory(StorageDirectory.music);
+  /// print('Music dir: ${musicDir.path}');
+  /// ```
+  static Future<Directory> getExternalStorageDirectory(
+    StorageDirectory dir,
+  ) async {
+    final String? path = await PlatformPathManager.instance
+        .getExternalStoragePath(dir);
+    if (path == null) {
+      throw MissingPlatformDirectoryException(
+        'Unable to get external storage directory for ${dir.name}',
+      );
+    }
+    return Directory(path);
+  }
+
+  /// Gets external storage directories on the host device for [dirs] (defaults to all [StorageDirectory.values]).
+  ///
+  /// - **Android**: Resolves external files directories for [dirs].
+  /// - **iOS & macOS**: Unsupported. Throws an [UnsupportedError].
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if no directories can be resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final storageDirs = await PathManager.getExternalStorageDirectories([
+  ///   .pictures,
+  ///   .movies,
+  /// ]);
+  /// for (final dir in storageDirs) {
+  ///   print('Storage dir: ${dir.path}');
+  /// }
+  /// ```
+  static Future<List<Directory>> getExternalStorageDirectories([
+    List<StorageDirectory> dirs = StorageDirectory.values,
+  ]) async {
+    final List<String>? paths = await PlatformPathManager.instance
+        .getExternalStoragePaths(dirs);
+    if (paths == null || paths.isEmpty) {
+      throw MissingPlatformDirectoryException(
+        'Unable to get external storage directories',
+      );
+    }
+    return paths.map(Directory.new).toList();
+  }
+
+  /// Gets external cache directories on the host device.
+  ///
+  /// - **Android**: Resolves app-specific external cache directories (`Context.getExternalCacheDirs()`).
+  /// - **iOS & macOS**: Unsupported. Throws an [UnsupportedError].
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if no cache directories can be resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final extCacheDirs = await PathManager.getExternalCacheDirectories();
+  /// for (final dir in extCacheDirs) {
+  ///   print('External cache: ${dir.path}');
+  /// }
+  /// ```
+  static Future<List<Directory>> getExternalCacheDirectories() async {
+    final List<String>? paths = await PlatformPathManager.instance
+        .getExternalCachePaths();
+    if (paths == null || paths.isEmpty) {
+      throw MissingPlatformDirectoryException(
+        'Unable to get external cache directories',
+      );
+    }
+    return paths.map(Directory.new).toList();
+  }
+
+  /// Gets the downloads directory on the host device.
+  ///
+  /// - **Android**: Resolves the app's external downloads directory.
+  /// - **iOS & macOS**: Resolves the user's Downloads directory (`NSDownloadsDirectory`).
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final downloadsDir = await PathManager.getDownloadsDirectory();
+  /// print('Downloads: ${downloadsDir.path}');
+  /// ```
+  static Future<Directory> getDownloadsDirectory() async {
+    final String? path = await PlatformPathManager.instance.getDownloadsPath();
+    if (path == null) {
+      throw MissingPlatformDirectoryException(
+        'Unable to get downloads directory',
       );
     }
     return Directory(path);

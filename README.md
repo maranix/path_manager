@@ -9,6 +9,14 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 
 ---
 
+## Supported Platforms
+
+| | Android | iOS | macOS | Linux | Windows |
+|---|---|---|---|---|---|
+| **Support** | API 21+ | 13.0+ | 10.15+ | ❌ | ❌ |
+
+---
+
 ## Platform & Method Support
 
 | Method | Android | iOS | macOS | Description |
@@ -16,8 +24,12 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 | `getTemporaryDirectory()` | ✅ | ✅ | ✅ | Temporary directory for cache files (subject to OS cleanup). |
 | `getApplicationSupportDirectory()` | ✅ | ✅ | ✅ | Application-created directory for app state, databases, etc. |
 | `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
-| `getCachesDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
+| `getApplicationCacheDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
 | `getApplicationNoBackupDirectory()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
+| `getExternalStorageDirectory(dir)` | ✅ | ❌ | ❌ | External storage directory for a given `StorageDirectory`. |
+| `getExternalStorageDirectories(dirs)` | ✅ | ❌ | ❌ | List of external storage directories for target `dirs`. |
+| `getExternalCacheDirectories()` | ✅ | ❌ | ❌ | List of external cache directories (`Context.getExternalCacheDirs`). |
+| `getDownloadsDirectory()` | ✅ | ✅ | ✅ | User/app downloads directory. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
 
 ---
@@ -37,8 +49,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  path_manager:
-    path: ^0.6.0
+  path_manager: ^0.7.0
 ```
 
 Then run:
@@ -113,7 +124,11 @@ import 'package:path_manager/path_manager.dart';
 final Directory temp = await PathManager.getTemporaryDirectory();
 final Directory support = await PathManager.getApplicationSupportDirectory();
 final Directory docs = await PathManager.getApplicationDocumentsDirectory();
-final Directory caches = await PathManager.getCachesDirectory();
+final Directory cache = await PathManager.getApplicationCacheDirectory();
+final Directory downloads = await PathManager.getDownloadsDirectory();
+
+// Android external storage (throws UnsupportedError on iOS/macOS)
+final Directory music = await PathManager.getExternalStorageDirectory(StorageDirectory.music);
 
 print('Support Dir: ${support.path}');
 ```
@@ -189,7 +204,7 @@ class FakePlatformPathManager implements PlatformPathManager {
   Future<String?> getDocumentsPath() async => '/fake/docs';
 
   @override
-  Future<String?> getCachesPath() async => '/fake/caches';
+  Future<String?> getApplicationCachePath() async => '/fake/caches';
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async => '/fake/nobackup';

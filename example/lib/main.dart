@@ -19,6 +19,8 @@ class _MyAppState extends State<MyApp> {
   Directory? _documentsDirectory;
   Directory? _applicationCacheDirectory;
   Directory? _noBackupDirectory;
+  Directory? _downloadsDirectory;
+  String _externalStorageStatus = 'Loading...';
   String _exclusionTestResult = 'Not tested';
   String? _error;
 
@@ -35,18 +37,40 @@ class _MyAppState extends State<MyApp> {
       final docs = await PathManager.getApplicationDocumentsDirectory();
       final cache = await PathManager.getApplicationCacheDirectory();
       Directory? noBackup;
+      Directory? downloads;
+      String extStatus = 'Unsupported on this platform';
+
       try {
         noBackup = await PathManager.getApplicationNoBackupDirectory();
       } catch (e) {
-        // We can't easily display a Directory-with-error, so we might just log it
         debugPrint('Error loading no-backup dir: $e');
       }
+
+      try {
+        downloads = await PathManager.getDownloadsDirectory();
+      } catch (e) {
+        debugPrint('Error loading downloads dir: $e');
+      }
+
+      try {
+        final extStorage = await PathManager.getExternalStorageDirectory(
+          StorageDirectory.music,
+        );
+        extStatus = extStorage.path;
+      } on UnsupportedError {
+        extStatus = 'Unsupported on iOS/macOS';
+      } catch (e) {
+        extStatus = 'Error: $e';
+      }
+
       setState(() {
         _temporaryDirectory = temp;
         _applicationSupportDirectory = appSupport;
         _documentsDirectory = docs;
         _applicationCacheDirectory = cache;
         _noBackupDirectory = noBackup;
+        _downloadsDirectory = downloads;
+        _externalStorageStatus = extStatus;
       });
     } catch (e) {
       setState(() {
@@ -118,6 +142,14 @@ class _MyAppState extends State<MyApp> {
                     _buildPathCard(
                       'No Backup Directory',
                       _noBackupDirectory?.path,
+                    ),
+                    _buildPathCard(
+                      'Downloads Directory',
+                      _downloadsDirectory?.path,
+                    ),
+                    _buildPathCard(
+                      'External Storage Directory',
+                      _externalStorageStatus,
                     ),
 
                     const SizedBox(height: 16),

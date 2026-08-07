@@ -6,6 +6,7 @@ import 'package:objective_c/objective_c.dart' as objc;
 
 import './exceptions.dart';
 import './platform_path_manager.dart';
+import './storage_directory.dart';
 import '../bindings/foundation/bindings.g.dart';
 
 /// The iOS/macOS implementation of [PlatformPathManager] using Apple Foundation APIs via FFI.
@@ -45,6 +46,39 @@ class FoundationPathManager extends PlatformPathManager {
   @override
   Future<String?> getApplicationCachePath() => _getPathForDirectory(
     NSSearchPathDirectory.NSCachesDirectory,
+  );
+
+  @override
+  Future<String?> getExternalStoragePath(StorageDirectory dir) async {
+    throw UnsupportedError(
+      'External storage directories are not supported on iOS/macOS as Apple sandboxing '
+      'does not provide an external storage concept. Use getApplicationDocumentsDirectory() '
+      'or getApplicationSupportDirectory() instead.',
+    );
+  }
+
+  @override
+  Future<List<String>?> getExternalStoragePaths([
+    List<StorageDirectory> dirs = StorageDirectory.values,
+  ]) async {
+    throw UnsupportedError(
+      'External storage directories are not supported on iOS/macOS as Apple sandboxing '
+      'does not provide an external storage concept. Use getApplicationDocumentsDirectory() '
+      'or getApplicationSupportDirectory() instead.',
+    );
+  }
+
+  @override
+  Future<List<String>?> getExternalCachePaths() async {
+    throw UnsupportedError(
+      'External cache directories are not supported on iOS/macOS as Apple sandboxing '
+      'does not provide an external cache concept. Use getApplicationCacheDirectory() instead.',
+    );
+  }
+
+  @override
+  Future<String?> getDownloadsPath() => _getPathForDirectory(
+    NSSearchPathDirectory.NSDownloadsDirectory,
   );
 
   Future<String?> _getPathForDirectory(

@@ -1,3 +1,5 @@
+import 'storage_directory.dart';
+
 /// The platform-specific interface contract for resolving directory paths.
 ///
 /// Implementations of this class register themselves via the static [instance]
@@ -51,6 +53,31 @@ abstract class PlatformPathManager {
   ///
   /// Returns `null` if the directory cannot be resolved or accessed.
   Future<String?> getApplicationNoBackupDirectory();
+
+  /// Gets the absolute path to an external storage directory for [dir].
+  ///
+  /// Returns `null` if external storage is unavailable or unmounted.
+  /// Throws [UnsupportedError] on unsupported platforms.
+  Future<String?> getExternalStoragePath(StorageDirectory dir);
+
+  /// Gets the absolute paths to external storage directories for [dirs] (defaults to all [StorageDirectory.values]).
+  ///
+  /// Returns `null` if external storage is unavailable or unmounted.
+  /// Throws [UnsupportedError] on unsupported platforms.
+  Future<List<String>?> getExternalStoragePaths([
+    List<StorageDirectory> dirs = StorageDirectory.values,
+  ]);
+
+  /// Gets the absolute paths to external cache directories.
+  ///
+  /// Returns `null` if external cache storage is unavailable or unmounted.
+  /// Throws [UnsupportedError] on unsupported platforms.
+  Future<List<String>?> getExternalCachePaths();
+
+  /// Gets the absolute path to the downloads directory on the host filesystem.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  Future<String?> getDownloadsPath();
 
   /// Sets whether the filesystem entity at [path] should be excluded from backups.
   ///

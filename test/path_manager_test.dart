@@ -43,7 +43,35 @@ void main() {
       expect(dir.existsSync(), isTrue);
     });
 
+    test('getDownloadsDirectory resolves downloads directory', () async {
+      final dir = await PathManager.getDownloadsDirectory();
+      // On macOS, downloads directory is resolved
+      if (Platform.isMacOS) {
+        expect(dir, isNotNull);
+        expect(dir.path, isNotEmpty);
+      }
+    });
+
     if (Platform.isMacOS || Platform.isIOS) {
+      test(
+        'external storage methods throw UnsupportedError on Apple platforms',
+        () async {
+          expect(
+            () =>
+                PathManager.getExternalStorageDirectory(StorageDirectory.music),
+            throwsA(isA<UnsupportedError>()),
+          );
+          expect(
+            () => PathManager.getExternalStorageDirectories(),
+            throwsA(isA<UnsupportedError>()),
+          );
+          expect(
+            () => PathManager.getExternalCacheDirectories(),
+            throwsA(isA<UnsupportedError>()),
+          );
+        },
+      );
+
       test(
         'setApplicationPathIsExcludedFromBackup excludes file and directory from backup',
         () async {
@@ -239,6 +267,10 @@ void main() {
       fakeManager.documentsPath = '/fake/docs';
       fakeManager.applicationCachePath = '/fake/caches';
       fakeManager.applicationNoBackupDirectory = '/fake/nobackup';
+      fakeManager.externalStoragePath = '/fake/ext_storage';
+      fakeManager.externalStoragePaths = ['/fake/ext_storage_1'];
+      fakeManager.externalCachePaths = ['/fake/ext_cache_1'];
+      fakeManager.downloadsPath = '/fake/downloads';
 
       final temp = await PathManager.getTemporaryDirectory();
       expect(temp.path, equals('/fake/temp'));
@@ -255,6 +287,24 @@ void main() {
       final noBackup = await PathManager.getApplicationNoBackupDirectory();
       expect(noBackup.path, equals('/fake/nobackup'));
 
+      final extStorage = await PathManager.getExternalStorageDirectory(
+        StorageDirectory.music,
+      );
+      expect(extStorage.path, equals('/fake/ext_storage'));
+
+      final extStorageDirs = await PathManager.getExternalStorageDirectories([
+        StorageDirectory.music,
+      ]);
+      expect(extStorageDirs.isNotEmpty, isTrue);
+      expect(extStorageDirs.first.path, equals('/fake/ext_storage_1'));
+
+      final extCacheDirs = await PathManager.getExternalCacheDirectories();
+      expect(extCacheDirs.isNotEmpty, isTrue);
+      expect(extCacheDirs.first.path, equals('/fake/ext_cache_1'));
+
+      final downloads = await PathManager.getDownloadsDirectory();
+      expect(downloads.path, equals('/fake/downloads'));
+
       await PathManager.setApplicationPathIsExcludedFromBackup(
         '/fake/file',
         true,
@@ -268,9 +318,10 @@ void main() {
       () async {
         fakeManager.temporaryPath = null;
         fakeManager.applicationSupportPath = null;
-        fakeManager.documentsPath = null;
-        fakeManager.applicationCachePath = null;
-        fakeManager.applicationNoBackupDirectory = null;
+        fakeManager.externalStoragePath = null;
+        fakeManager.externalStoragePaths = null;
+        fakeManager.externalCachePaths = null;
+        fakeManager.downloadsPath = null;
 
         expect(
           () => PathManager.getTemporaryDirectory(),
@@ -292,6 +343,22 @@ void main() {
           () => PathManager.getApplicationNoBackupDirectory(),
           throwsA(isA<MissingPlatformDirectoryException>()),
         );
+        expect(
+          () => PathManager.getExternalStorageDirectory(StorageDirectory.music),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getExternalStorageDirectories(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getExternalCacheDirectories(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
+        expect(
+          () => PathManager.getDownloadsDirectory(),
+          throwsA(isA<MissingPlatformDirectoryException>()),
+        );
       },
     );
   });
@@ -303,6 +370,10 @@ class FakePlatformPathManager implements PlatformPathManager {
   String? documentsPath;
   String? applicationCachePath;
   String? applicationNoBackupDirectory;
+  String? externalStoragePath;
+  List<String>? externalStoragePaths;
+  List<String>? externalCachePaths;
+  String? downloadsPath;
 
   String? lastExcludedPath;
   bool? lastExcludedValue;
@@ -323,6 +394,21 @@ class FakePlatformPathManager implements PlatformPathManager {
   @override
   Future<String?> getApplicationNoBackupDirectory() async =>
       applicationNoBackupDirectory;
+
+  @override
+  Future<String?> getExternalStoragePath(StorageDirectory dir) async =>
+      externalStoragePath;
+
+  @override
+  Future<List<String>?> getExternalStoragePaths([
+    List<StorageDirectory> dirs = StorageDirectory.values,
+  ]) async => externalStoragePaths;
+
+  @override
+  Future<List<String>?> getExternalCachePaths() async => externalCachePaths;
+
+  @override
+  Future<String?> getDownloadsPath() async => downloadsPath;
 
   @override
   Future<void> setApplicationPathIsExcludedFromBackup(

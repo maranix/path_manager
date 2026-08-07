@@ -176,6 +176,41 @@ try {
   // Thrown if the target file/directory does not exist
   print('Filesystem error: ${e.message}');
 }
+
+### 4. External Storage & StorageDirectory Types (Android)
+
+When requesting external storage directories on Android, pass values from the `StorageDirectory` enum to target specific media/content directories:
+
+| `StorageDirectory` Enum | Android Environment Path | Description |
+|---|---|---|
+| `StorageDirectory.music` | `Music` | Directory for user music and audio files. |
+| `StorageDirectory.podcasts` | `Podcasts` | Directory for user podcasts. |
+| `StorageDirectory.rtf` | `Rtf` | Directory for rich text format files. |
+| `StorageDirectory.alarms` | `Alarms` | Directory for user alarm sounds. |
+| `StorageDirectory.notifications` | `Notifications` | Directory for user notification sounds. |
+| `StorageDirectory.pictures` | `Pictures` | Directory for user images and pictures. |
+| `StorageDirectory.movies` | `Movies` | Directory for user movies and videos. |
+| `StorageDirectory.downloads` | `Download` | Directory for user downloaded files. |
+| `StorageDirectory.dcim` | `DCIM` | Directory for photos/videos taken by the camera. |
+| `StorageDirectory.documents` | `Documents` | Directory for user documents. |
+
+#### Example
+
+```dart
+import 'package:path_manager/path_manager.dart';
+
+// Fetch a single external storage directory
+final Directory picturesDir = await PathManager.getExternalStorageDirectory(
+  StorageDirectory.pictures,
+);
+print('Pictures Path: ${picturesDir.path}');
+
+// Fetch multiple external storage directories (defaults to all StorageDirectory.values if omitted)
+final List<Directory> mediaDirs = await PathManager.getExternalStorageDirectories([
+  StorageDirectory.pictures,
+  StorageDirectory.movies,
+]);
+```
 ```
 
 ---

@@ -17,7 +17,7 @@ class _MyAppState extends State<MyApp> {
   Directory? _temporaryDirectory;
   Directory? _applicationSupportDirectory;
   Directory? _documentsDirectory;
-  Directory? _cachesDirectory;
+  Directory? _applicationCacheDirectory;
   Directory? _noBackupDirectory;
   String _exclusionTestResult = 'Not tested';
   String? _error;
@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
       final temp = await PathManager.getTemporaryDirectory();
       final appSupport = await PathManager.getApplicationSupportDirectory();
       final docs = await PathManager.getApplicationDocumentsDirectory();
-      final caches = await PathManager.getCachesDirectory();
+      final cache = await PathManager.getApplicationCacheDirectory();
       Directory? noBackup;
       try {
         noBackup = await PathManager.getApplicationNoBackupDirectory();
@@ -45,7 +45,7 @@ class _MyAppState extends State<MyApp> {
         _temporaryDirectory = temp;
         _applicationSupportDirectory = appSupport;
         _documentsDirectory = docs;
-        _cachesDirectory = caches;
+        _applicationCacheDirectory = cache;
         _noBackupDirectory = noBackup;
       });
     } catch (e) {
@@ -111,7 +111,10 @@ class _MyAppState extends State<MyApp> {
                       'Documents Directory',
                       _documentsDirectory?.path,
                     ),
-                    _buildPathCard('Caches Directory', _cachesDirectory?.path),
+                    _buildPathCard(
+                      'Application Cache Directory',
+                      _applicationCacheDirectory?.path,
+                    ),
                     _buildPathCard(
                       'No Backup Directory',
                       _noBackupDirectory?.path,

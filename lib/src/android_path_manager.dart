@@ -67,7 +67,7 @@ class AndroidPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getCachesPath() async {
+  Future<String?> getApplicationCachePath() async {
     final context = jnif.androidApplicationContext.as(android_jni.Context.type);
 
     try {

@@ -100,7 +100,7 @@ abstract final class PathManager {
     return Directory(path);
   }
 
-  /// Gets the path to the application caches directory on the host device.
+  /// Gets the path to the application cache directory on the host device.
   ///
   /// Use this directory for data that can be recreated by the application but should
   /// persist longer than temporary files, such as downloaded image caches.
@@ -110,13 +110,16 @@ abstract final class PathManager {
   /// ### Examples
   ///
   /// ```dart
-  /// final cacheDir = await PathManager.getCachesDirectory();
+  /// final cacheDir = await PathManager.getApplicationCacheDirectory();
   /// final cachedImage = File('${cacheDir.path}/avatar_cache.png');
   /// ```
-  static Future<Directory> getCachesDirectory() async {
-    final String? path = await PlatformPathManager.instance.getCachesPath();
+  static Future<Directory> getApplicationCacheDirectory() async {
+    final String? path =
+        await PlatformPathManager.instance.getApplicationCachePath();
     if (path == null) {
-      throw MissingPlatformDirectoryException('Unable to get caches directory');
+      throw MissingPlatformDirectoryException(
+        'Unable to get application cache directory',
+      );
     }
     return Directory(path);
   }

@@ -42,10 +42,10 @@ abstract class PlatformPathManager {
   /// Returns `null` if the directory cannot be resolved or accessed.
   Future<String?> getDocumentsPath();
 
-  /// Gets the absolute path to the application caches directory on the host filesystem.
+  /// Gets the absolute path to the application cache directory on the host filesystem.
   ///
   /// Returns `null` if the directory cannot be resolved or accessed.
-  Future<String?> getCachesPath();
+  Future<String?> getApplicationCachePath();
 
   /// Gets the absolute path to a default directory that is excluded from platform backup systems.
   ///

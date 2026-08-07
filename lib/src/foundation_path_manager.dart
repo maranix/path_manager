@@ -43,7 +43,7 @@ class FoundationPathManager extends PlatformPathManager {
   );
 
   @override
-  Future<String?> getCachesPath() => _getPathForDirectory(
+  Future<String?> getApplicationCachePath() => _getPathForDirectory(
     NSSearchPathDirectory.NSCachesDirectory,
   );
 

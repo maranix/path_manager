@@ -37,8 +37,8 @@ void main() {
       },
     );
 
-    test('getCachesDirectory returns a valid directory', () async {
-      final dir = await PathManager.getCachesDirectory();
+    test('getApplicationCacheDirectory returns a valid directory', () async {
+      final dir = await PathManager.getApplicationCacheDirectory();
       expect(dir, isNotNull);
       expect(dir.existsSync(), isTrue);
     });
@@ -237,7 +237,7 @@ void main() {
       fakeManager.temporaryPath = '/fake/temp';
       fakeManager.applicationSupportPath = '/fake/support';
       fakeManager.documentsPath = '/fake/docs';
-      fakeManager.cachesPath = '/fake/caches';
+      fakeManager.applicationCachePath = '/fake/caches';
       fakeManager.applicationNoBackupDirectory = '/fake/nobackup';
 
       final temp = await PathManager.getTemporaryDirectory();
@@ -249,8 +249,8 @@ void main() {
       final docs = await PathManager.getApplicationDocumentsDirectory();
       expect(docs.path, equals('/fake/docs'));
 
-      final caches = await PathManager.getCachesDirectory();
-      expect(caches.path, equals('/fake/caches'));
+      final cache = await PathManager.getApplicationCacheDirectory();
+      expect(cache.path, equals('/fake/caches'));
 
       final noBackup = await PathManager.getApplicationNoBackupDirectory();
       expect(noBackup.path, equals('/fake/nobackup'));
@@ -269,7 +269,7 @@ void main() {
         fakeManager.temporaryPath = null;
         fakeManager.applicationSupportPath = null;
         fakeManager.documentsPath = null;
-        fakeManager.cachesPath = null;
+        fakeManager.applicationCachePath = null;
         fakeManager.applicationNoBackupDirectory = null;
 
         expect(
@@ -285,7 +285,7 @@ void main() {
           throwsA(isA<MissingPlatformDirectoryException>()),
         );
         expect(
-          () => PathManager.getCachesDirectory(),
+          () => PathManager.getApplicationCacheDirectory(),
           throwsA(isA<MissingPlatformDirectoryException>()),
         );
         expect(
@@ -301,7 +301,7 @@ class FakePlatformPathManager implements PlatformPathManager {
   String? temporaryPath;
   String? applicationSupportPath;
   String? documentsPath;
-  String? cachesPath;
+  String? applicationCachePath;
   String? applicationNoBackupDirectory;
 
   String? lastExcludedPath;
@@ -318,7 +318,7 @@ class FakePlatformPathManager implements PlatformPathManager {
   Future<String?> getDocumentsPath() async => documentsPath;
 
   @override
-  Future<String?> getCachesPath() async => cachesPath;
+  Future<String?> getApplicationCachePath() async => applicationCachePath;
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async =>

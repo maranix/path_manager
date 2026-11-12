@@ -82,6 +82,83 @@ void main() {
         expect(temp.path, contains('cache'));
         expect(support.path, contains('files'));
       }
+
+      // 8. Synchronous getters mirror asynchronous resolution
+      expect(PathManager.getTemporaryDirectorySync().path, temp.path);
+      expect(
+        PathManager.getApplicationSupportDirectorySync().path,
+        support.path,
+      );
+      expect(
+        PathManager.getApplicationDocumentsDirectorySync().path,
+        docs.path,
+      );
+      expect(PathManager.getApplicationCacheDirectorySync().path, cache.path);
+
+      // 9. Desktop media directories
+      if (Platform.isAndroid || Platform.isIOS) {
+        expect(
+          () => PathManager.getDesktopDirectorySync(),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => PathManager.getPicturesDirectorySync(),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => PathManager.getMusicDirectorySync(),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => PathManager.getVideosDirectorySync(),
+          throwsA(isA<UnsupportedError>()),
+        );
+      } else {
+        for (final directory in await Future.wait([
+          PathManager.getDesktopDirectory(),
+          PathManager.getPicturesDirectory(),
+          PathManager.getMusicDirectory(),
+          PathManager.getVideosDirectory(),
+        ])) {
+          expect(directory.path, isNotEmpty);
+        }
+        expect(PathManager.getDesktopDirectorySync().path, isNotEmpty);
+        expect(PathManager.getPicturesDirectorySync().path, isNotEmpty);
+        expect(PathManager.getMusicDirectorySync().path, isNotEmpty);
+        expect(PathManager.getVideosDirectorySync().path, isNotEmpty);
+      }
+
+      // 10. Volume capacity
+      final space = await PathManager.getDiskSpace();
+      expect(space.totalBytes, greaterThan(0));
+      expect(space.freeBytes, greaterThanOrEqualTo(0));
+      expect(space.freeBytes, lessThanOrEqualTo(space.totalBytes));
+      expect(space.usedBytes, space.totalBytes - space.freeBytes);
+      expect(PathManager.getDiskSpaceSync().totalBytes, space.totalBytes);
+
+      // 11. Cache size, subdirectories, and clearing
+      final cacheSubdir = await PathManager.getApplicationCacheSubdirectory(
+        'integration_test',
+      );
+      expect(cacheSubdir.existsSync(), isTrue);
+      final probe = File('${cacheSubdir.path}/probe.bin');
+      await probe.writeAsBytes(List.filled(64, 0));
+      expect(
+        await PathManager.getApplicationCacheSize(),
+        greaterThanOrEqualTo(64),
+      );
+
+      await PathManager.clearApplicationCache();
+      expect(await cache.exists(), isTrue);
+      expect(await PathManager.getApplicationCacheSize(), 0);
+
+      // 12. Byte formatting
+      expect(PathManager.formatBytes(0), '0 B');
+      expect(PathManager.formatBytes(1536), '1.5 KB');
+      await expectLater(
+        PathManager.getApplicationSupportSubdirectory('../escape'),
+        throwsA(isA<ArgumentError>()),
+      );
     } on UnimplementedError {
       // In headless test environments without platform registrant execution,
       // the placeholder PlatformPathManager is active.

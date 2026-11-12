@@ -49,7 +49,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  path_manager: ^0.7.0
+  path_manager: ^0.8.0
 ```
 
 Then run:
@@ -288,11 +288,11 @@ Contributions and suggestions are welcome to this project!
 2. Generate FFI/JNI bindings:
    - For Android (requires `JAVA_HOME` pointing to a JDK):
      ```bash
-     dart run tools/jnigen.dart
+     dart run tool/jnigen.dart
      ```
    - For iOS/macOS:
      ```bash
-     dart run tools/ffigen.dart
+     dart run tool/ffigen.dart
      ```
 3. Format all files before pushing:
    ```bash

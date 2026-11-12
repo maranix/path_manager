@@ -1,3 +1,20 @@
+# 0.8.0
+
+* **Environment**:
+    - Bump Dart SDK constraint to `^3.14.0` and Flutter to `>=3.50.0`.
+* **Bindings & Tooling**:
+    - Migrate `ffigen` configuration in `tool/ffigen.dart` to `ffigen` 23.x API.
+    - Optimize Foundation bindings by filtering `NSFileManager` methods, eliminating unnecessary block trampolines and native Objective-C compile dependencies.
+    - Migrate `jnigen` configuration in `tool/jnigen.dart` to `jnigen` 1.x API.
+    - Relocate generated bindings to `lib/bindings/foundation.g.dart` and `lib/bindings/android.g.dart`.
+* **Refactoring & Modernization**:
+    - Modernize exception classes and `StorageDirectory` enum with concise constructor syntax.
+    - Remove legacy `FoundationFFI` wrapper call in `FoundationPathManager`.
+    - Extract `FakePlatformPathManager` into a dedicated test helper file.
+* **Example App**:
+    - Upgrade Gradle wrapper to 9.3.1 and Android Gradle Plugin to 9.1.1.
+    - Update example dependencies and analysis excludes.
+
 # 0.7.x
 
 * **Features**:

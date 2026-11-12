@@ -1,3 +1,8 @@
+# Root development ignores
+.dart_tool/
+.packages
+build/
+.DS_Store
+
 AGENTS.md
-build
-graphify-out
+graphify-out/

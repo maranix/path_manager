@@ -1,0 +1,10 @@
+# Development and build files
+.dart_tool/
+.packages
+build/
+.DS_Store
+
+# Agent and internal tooling
+AGENTS.md
+graphify-out/
+tool/

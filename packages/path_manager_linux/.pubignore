@@ -1,0 +1,18 @@
+# Development and build files
+.dart_tool/
+.packages
+build/
+.DS_Store
+
+# Agent and internal tooling
+AGENTS.md
+graphify-out/
+tool/
+
+# Exclude native example runners and test harnesses to minimize package size
+example/linux/
+example/integration_test/
+example/test/
+example/.dart_tool/
+example/.metadata
+example/build/

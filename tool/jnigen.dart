@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:jnigen/jnigen.dart';
 import 'package:logging/logging.dart';
 
@@ -11,22 +12,24 @@ void main() async {
     stdout.writeln('${record.level.name}: ${record.message}');
   });
 
-  final config = Config(
-    outputConfig: OutputConfig(
-      dartConfig: DartCodeOutputConfig(
-        path: pkgRoot.resolve('lib/bindings/android/bindings.g.dart'),
-        structure: OutputStructure.singleFile,
+  final generator = JniGenerator(
+    input: Input(
+      classes: [
+        'android.content.Context',
+        'java.io.File',
+      ],
+      androidSdk: AndroidSdk(
+        addGradleDeps: true,
+        androidExample: pkgRoot.resolve('example/'),
       ),
     ),
-    classes: [
-      'android.content.Context',
-      'java.io.File',
-    ],
-    androidSdkConfig: AndroidSdkConfig(
-      addGradleDeps: true,
-      androidExample: 'example/',
+    output: Output(
+      dart: DartOutput(
+        path: pkgRoot.resolve('lib/bindings/android.g.dart'),
+        structure: .singleFile,
+      ),
     ),
   );
 
-  await generateJniBindings(config);
+  await generator.generate(logger: Logger.root);
 }

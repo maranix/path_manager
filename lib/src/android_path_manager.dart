@@ -1,17 +1,18 @@
 import 'dart:io';
+
 import 'package:jni/jni.dart' as jni;
 import 'package:jni_flutter/jni_flutter.dart' as jnif;
 
-import './exceptions.dart';
-import './platform_path_manager.dart';
-import './storage_directory.dart';
-import '../bindings/android/bindings.g.dart' as android_jni;
+import 'package:path_manager/src/exceptions.dart';
+import 'package:path_manager/src/platform_path_manager.dart';
+import 'package:path_manager/src/storage_directory.dart';
+import 'package:path_manager/bindings/android.g.dart' as android_jni;
 
 /// The Android implementation of [PlatformPathManager] using JNI via FFI.
 ///
 /// This class handles directory path resolutions by communicating with the
 /// Android platform APIs using the generated JNI bindings.
-class AndroidPathManager extends PlatformPathManager {
+class AndroidPathManager() extends PlatformPathManager {
   /// Registers the Android implementation of [PlatformPathManager].
   static void registerWith() {
     PlatformPathManager.instance = AndroidPathManager();

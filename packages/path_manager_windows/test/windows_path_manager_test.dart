@@ -26,20 +26,29 @@ void main() {
       final manager = WindowsPathManager(
         tempPathResolver: () => r'C:\Users\Test\AppData\Local\Temp',
       );
-      expect(await manager.getTemporaryPath(), r'C:\Users\Test\AppData\Local\Temp');
+      expect(
+        await manager.getTemporaryPath(),
+        r'C:\Users\Test\AppData\Local\Temp',
+      );
     });
 
-    test('getApplicationSupportPath dispatches FOLDERID_RoamingAppData', () async {
-      final manager = WindowsPathManager(
-        knownFolderPathResolver: (guid) {
-          if (guid == FOLDERID_RoamingAppData) {
-            return r'C:\Users\Test\AppData\Roaming';
-          }
-          return null;
-        },
-      );
-      expect(await manager.getApplicationSupportPath(), r'C:\Users\Test\AppData\Roaming');
-    });
+    test(
+      'getApplicationSupportPath dispatches FOLDERID_RoamingAppData',
+      () async {
+        final manager = WindowsPathManager(
+          knownFolderPathResolver: (guid) {
+            if (guid == FOLDERID_RoamingAppData) {
+              return r'C:\Users\Test\AppData\Roaming';
+            }
+            return null;
+          },
+        );
+        expect(
+          await manager.getApplicationSupportPath(),
+          r'C:\Users\Test\AppData\Roaming',
+        );
+      },
+    );
 
     test('getDocumentsPath dispatches FOLDERID_Documents', () async {
       final manager = WindowsPathManager(
@@ -62,7 +71,10 @@ void main() {
           return null;
         },
       );
-      expect(await manager.getApplicationCachePath(), r'C:\Users\Test\AppData\Local');
+      expect(
+        await manager.getApplicationCachePath(),
+        r'C:\Users\Test\AppData\Local',
+      );
     });
 
     test('getDownloadsPath dispatches FOLDERID_Downloads', () async {
@@ -78,7 +90,9 @@ void main() {
     });
 
     test('getApplicationNoBackupDirectory creates and resolves __no_backup__ subpath', () async {
-      final tempDir = await Directory.systemTemp.createTemp('windows_path_manager_test');
+      final tempDir = await Directory.systemTemp.createTemp(
+        'windows_path_manager_test',
+      );
       try {
         final manager = WindowsPathManager(
           knownFolderPathResolver: (guid) => tempDir.path,
@@ -92,26 +106,32 @@ void main() {
       }
     });
 
-    test('external storage methods throw UnsupportedError on Windows', () async {
-      final manager = WindowsPathManager();
-      expect(
-        () => manager.getExternalStoragePath(StorageDirectory.music),
-        throwsA(isA<UnsupportedError>()),
-      );
-      expect(
-        () => manager.getExternalStoragePaths(),
-        throwsA(isA<UnsupportedError>()),
-      );
-      expect(
-        () => manager.getExternalCachePaths(),
-        throwsA(isA<UnsupportedError>()),
-      );
-    });
+    test(
+      'external storage methods throw UnsupportedError on Windows',
+      () async {
+        final manager = WindowsPathManager();
+        expect(
+          () => manager.getExternalStoragePath(StorageDirectory.music),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => manager.getExternalStoragePaths(),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => manager.getExternalCachePaths(),
+          throwsA(isA<UnsupportedError>()),
+        );
+      },
+    );
 
     test('setApplicationPathIsExcludedFromBackup throws UnsupportedError on Windows', () async {
       final manager = WindowsPathManager();
       expect(
-        () => manager.setApplicationPathIsExcludedFromBackup(r'C:\temp\file', true),
+        () => manager.setApplicationPathIsExcludedFromBackup(
+          r'C:\temp\file',
+          true,
+        ),
         throwsA(isA<UnsupportedError>()),
       );
     });

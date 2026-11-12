@@ -1,0 +1,28 @@
+name: path_manager_example
+resolution: workspace
+description: "Demonstrates how to use the path_manager plugin."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.11.0
+  path_manager:
+    path: ../
+  path_manager_platform_interface:
+    path: ../../path_manager_platform_interface
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

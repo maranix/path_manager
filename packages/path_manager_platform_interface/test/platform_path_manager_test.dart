@@ -184,7 +184,10 @@ void main() {
     });
 
     test('BackupExclusionConflictException toString contains message and path', () {
-      const e = BackupExclusionConflictException('/var/test', 'Conflict occurred');
+      const e = BackupExclusionConflictException(
+        '/var/test',
+        'Conflict occurred',
+      );
       expect(e.path, '/var/test');
       expect(e.message, 'Conflict occurred');
       expect(

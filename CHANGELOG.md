@@ -1,3 +1,21 @@
+# 0.9.0
+
+* **Federated Architecture**:
+    - Transition to a federated Flutter plugin architecture consisting of:
+        - `path_manager`: App-facing facade package.
+        - `path_manager_platform_interface`: Common platform interface and shared data structures.
+        - `path_manager_android`: Android implementation using JNI via FFI (`package:jni`).
+        - `path_manager_foundation`: iOS and macOS implementation using Foundation Objective-C FFI (`package:objective_c`).
+        - `path_manager_linux`: Linux desktop implementation using the XDG Base Directory specification (`package:xdg_directories`).
+        - `path_manager_windows`: Windows desktop implementation using Win32 Shell Known Folders via FFI (`package:win32`).
+* **Desktop Support**:
+    - Add Linux desktop support conforming to XDG standards (`~/.local/share`, `~/.cache`, `$TMPDIR`).
+    - Add Windows desktop support using Win32 Shell Known Folders (`FOLDERID_RoamingAppData`, `FOLDERID_LocalAppData`, `FOLDERID_Documents`, `FOLDERID_Downloads`, and `GetTempPath2`/`GetTempPath`).
+* **Monorepo & Tooling**:
+    - Organize repository using Dart 3.5+ Pub Workspaces with a unified lockfile at workspace root.
+    - Add dedicated platform-scoped example apps and integration test harnesses for each platform package.
+    - Provide a multi-platform example application in `packages/path_manager/example`.
+
 # 0.8.0
 
 * **Environment**:

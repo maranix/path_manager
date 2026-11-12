@@ -20,7 +20,8 @@ void main() {
     test('setApplicationPathIsExcludedFromBackup throws UnsupportedError', () {
       final manager = AndroidPathManager();
       expect(
-        () => manager.setApplicationPathIsExcludedFromBackup('/fake/path', true),
+        () =>
+            manager.setApplicationPathIsExcludedFromBackup('/fake/path', true),
         throwsA(isA<UnsupportedError>()),
       );
     });

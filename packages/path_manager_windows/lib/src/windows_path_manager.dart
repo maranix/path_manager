@@ -16,9 +16,9 @@ class WindowsPathManager extends PlatformPathManager {
   WindowsPathManager({
     KnownFolderPathResolver? knownFolderPathResolver,
     TempPathResolver? tempPathResolver,
-  })  : _knownFolderPathResolver =
-            knownFolderPathResolver ?? _defaultGetKnownFolderPath,
-        _tempPathResolver = tempPathResolver ?? _defaultGetTempPath;
+  }) : _knownFolderPathResolver =
+           knownFolderPathResolver ?? _defaultGetKnownFolderPath,
+       _tempPathResolver = tempPathResolver ?? _defaultGetTempPath;
 
   /// Registers the Windows implementation of [PlatformPathManager].
   static void registerWith() {

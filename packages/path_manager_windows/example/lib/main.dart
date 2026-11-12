@@ -55,13 +55,14 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('path_manager_windows example'),
-        ),
+        appBar: AppBar(title: const Text('path_manager_windows example')),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: _error != null
-              ? Text('Error: $_error', style: const TextStyle(color: Colors.red))
+              ? Text(
+                  'Error: $_error',
+                  style: const TextStyle(color: Colors.red),
+                )
               : ListView(
                   children: [
                     Text('Temp: ${_tempPath ?? "Loading..."}'),

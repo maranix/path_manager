@@ -70,21 +70,24 @@ void main() {
       }
     });
 
-    test('external storage methods throw UnsupportedError on Apple platforms', () async {
-      final manager = FoundationPathManager();
-      expect(
-        () => manager.getExternalStoragePath(StorageDirectory.music),
-        throwsA(isA<UnsupportedError>()),
-      );
-      expect(
-        () => manager.getExternalStoragePaths(),
-        throwsA(isA<UnsupportedError>()),
-      );
-      expect(
-        () => manager.getExternalCachePaths(),
-        throwsA(isA<UnsupportedError>()),
-      );
-    });
+    test(
+      'external storage methods throw UnsupportedError on Apple platforms',
+      () async {
+        final manager = FoundationPathManager();
+        expect(
+          () => manager.getExternalStoragePath(StorageDirectory.music),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => manager.getExternalStoragePaths(),
+          throwsA(isA<UnsupportedError>()),
+        );
+        expect(
+          () => manager.getExternalCachePaths(),
+          throwsA(isA<UnsupportedError>()),
+        );
+      },
+    );
 
     test('setApplicationPathIsExcludedFromBackup excludes file and directory from backup', () async {
       final manager = FoundationPathManager();
@@ -115,9 +118,15 @@ void main() {
       await testFile.writeAsString('Foundation test content');
       try {
         expect(getIsExcluded(testFile.path), isFalse);
-        await manager.setApplicationPathIsExcludedFromBackup(testFile.path, true);
+        await manager.setApplicationPathIsExcludedFromBackup(
+          testFile.path,
+          true,
+        );
         expect(getIsExcluded(testFile.path), isTrue);
-        await manager.setApplicationPathIsExcludedFromBackup(testFile.path, false);
+        await manager.setApplicationPathIsExcludedFromBackup(
+          testFile.path,
+          false,
+        );
         expect(getIsExcluded(testFile.path), isFalse);
       } finally {
         if (await testFile.exists()) {
@@ -129,7 +138,10 @@ void main() {
       await testDir.create();
       try {
         expect(getIsExcluded(testDir.path), isFalse);
-        await manager.setApplicationPathIsExcludedFromBackup(testDir.path, true);
+        await manager.setApplicationPathIsExcludedFromBackup(
+          testDir.path,
+          true,
+        );
         expect(getIsExcluded(testDir.path), isTrue);
       } finally {
         if (await testDir.exists()) {
@@ -141,37 +153,46 @@ void main() {
     test('setApplicationPathIsExcludedFromBackup throws FileSystemException on non-existent paths', () async {
       final manager = FoundationPathManager();
       expect(
-        () => manager.setApplicationPathIsExcludedFromBackup('/non_existent_path_xyz', true),
+        () => manager.setApplicationPathIsExcludedFromBackup(
+          '/non_existent_path_xyz',
+          true,
+        ),
         throwsA(isA<FileSystemException>()),
       );
     });
 
-    test('getApplicationNoBackupDirectory handles creation and conflict detection', () async {
-      final manager = FoundationPathManager();
-      final supportPath = await manager.getApplicationSupportPath();
-      expect(supportPath, isNotNull);
+    test(
+      'getApplicationNoBackupDirectory handles creation and conflict detection',
+      () async {
+        final manager = FoundationPathManager();
+        final supportPath = await manager.getApplicationSupportPath();
+        expect(supportPath, isNotNull);
 
-      final noBackupDir = Directory('$supportPath/__no_backup__');
-      if (await noBackupDir.exists()) {
-        await noBackupDir.delete(recursive: true);
-      }
+        final noBackupDir = Directory('$supportPath/__no_backup__');
+        if (await noBackupDir.exists()) {
+          await noBackupDir.delete(recursive: true);
+        }
 
-      final resolvedPath = await manager.getApplicationNoBackupDirectory();
-      expect(resolvedPath, isNotNull);
-      expect(Directory(resolvedPath!).existsSync(), isTrue);
+        final resolvedPath = await manager.getApplicationNoBackupDirectory();
+        expect(resolvedPath, isNotNull);
+        expect(Directory(resolvedPath!).existsSync(), isTrue);
 
-      // Explicitly remove exclusion flag to trigger conflict
-      await manager.setApplicationPathIsExcludedFromBackup(resolvedPath, false);
+        // Explicitly remove exclusion flag to trigger conflict
+        await manager.setApplicationPathIsExcludedFromBackup(
+          resolvedPath,
+          false,
+        );
 
-      expect(
-        () => manager.getApplicationNoBackupDirectory(),
-        throwsA(isA<BackupExclusionConflictException>()),
-      );
+        expect(
+          () => manager.getApplicationNoBackupDirectory(),
+          throwsA(isA<BackupExclusionConflictException>()),
+        );
 
-      // Clean up
-      if (await noBackupDir.exists()) {
-        await noBackupDir.delete(recursive: true);
-      }
-    });
+        // Clean up
+        if (await noBackupDir.exists()) {
+          await noBackupDir.delete(recursive: true);
+        }
+      },
+    );
   });
 }

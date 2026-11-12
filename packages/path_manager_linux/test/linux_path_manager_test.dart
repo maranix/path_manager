@@ -28,12 +28,15 @@ void main() {
       expect(await manager.getTemporaryPath(), '/custom/tmp');
     });
 
-    test('getTemporaryPath falls back to /tmp when TMPDIR is empty or not set', () async {
-      final manager = LinuxPathManager(
-        environment: {},
-      );
-      expect(await manager.getTemporaryPath(), '/tmp');
-    });
+    test(
+      'getTemporaryPath falls back to /tmp when TMPDIR is empty or not set',
+      () async {
+        final manager = LinuxPathManager(
+          environment: {},
+        );
+        expect(await manager.getTemporaryPath(), '/tmp');
+      },
+    );
 
     test('getApplicationSupportPath returns dataHome', () async {
       final manager = LinuxPathManager(
@@ -49,12 +52,16 @@ void main() {
       expect(await manager.getApplicationCachePath(), '/custom/cache');
     });
 
-    test('getDocumentsPath resolves from getUserDirectory when available', () async {
-      final manager = LinuxPathManager(
-        getUserDirectory: (name) => name == 'DOCUMENTS' ? Directory('/user/docs') : null,
-      );
-      expect(await manager.getDocumentsPath(), '/user/docs');
-    });
+    test(
+      'getDocumentsPath resolves from getUserDirectory when available',
+      () async {
+        final manager = LinuxPathManager(
+          getUserDirectory: (name) =>
+              name == 'DOCUMENTS' ? Directory('/user/docs') : null,
+        );
+        expect(await manager.getDocumentsPath(), '/user/docs');
+      },
+    );
 
     test('getDocumentsPath falls back to HOME/Documents', () async {
       final manager = LinuxPathManager(
@@ -64,12 +71,16 @@ void main() {
       expect(await manager.getDocumentsPath(), '/home/alice/Documents');
     });
 
-    test('getDownloadsPath resolves from getUserDirectory when available', () async {
-      final manager = LinuxPathManager(
-        getUserDirectory: (name) => name == 'DOWNLOAD' ? Directory('/user/downloads') : null,
-      );
-      expect(await manager.getDownloadsPath(), '/user/downloads');
-    });
+    test(
+      'getDownloadsPath resolves from getUserDirectory when available',
+      () async {
+        final manager = LinuxPathManager(
+          getUserDirectory: (name) =>
+              name == 'DOWNLOAD' ? Directory('/user/downloads') : null,
+        );
+        expect(await manager.getDownloadsPath(), '/user/downloads');
+      },
+    );
 
     test('getDownloadsPath falls back to HOME/Downloads', () async {
       final manager = LinuxPathManager(
@@ -80,7 +91,9 @@ void main() {
     });
 
     test('getApplicationNoBackupDirectory creates and resolves __no_backup__ subpath', () async {
-      final tempDir = await Directory.systemTemp.createTemp('linux_path_manager_test');
+      final tempDir = await Directory.systemTemp.createTemp(
+        'linux_path_manager_test',
+      );
       try {
         final manager = LinuxPathManager(dataHome: tempDir);
         final noBackupPath = await manager.getApplicationNoBackupDirectory();
@@ -108,12 +121,18 @@ void main() {
       );
     });
 
-    test('setApplicationPathIsExcludedFromBackup throws UnsupportedError on Linux', () async {
-      final manager = LinuxPathManager();
-      expect(
-        () => manager.setApplicationPathIsExcludedFromBackup('/tmp/somefile', true),
-        throwsA(isA<UnsupportedError>()),
-      );
-    });
+    test(
+      'setApplicationPathIsExcludedFromBackup throws UnsupportedError on Linux',
+      () async {
+        final manager = LinuxPathManager();
+        expect(
+          () => manager.setApplicationPathIsExcludedFromBackup(
+            '/tmp/somefile',
+            true,
+          ),
+          throwsA(isA<UnsupportedError>()),
+        );
+      },
+    );
   });
 }

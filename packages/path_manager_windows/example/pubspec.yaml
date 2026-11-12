@@ -1,4 +1,5 @@
 name: path_manager_windows_example
+resolution: workspace
 description: "Demonstrates how to use the path_manager_windows plugin."
 publish_to: 'none'
 
@@ -13,10 +14,6 @@ dependencies:
   material_ui: ^1.11.0
   path_manager_windows:
     path: ../
-  path_manager_platform_interface:
-    path: ../../path_manager_platform_interface
-
-dependency_overrides:
   path_manager_platform_interface:
     path: ../../path_manager_platform_interface
 

@@ -3,9 +3,13 @@
 [![Pub Version](https://img.shields.io/pub/v/path_manager)](https://pub.dev/packages/path_manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-A plugin providing unified access to commonly used host filesystem directories on Android, iOS, and macOS. 
+A federated Flutter plugin providing unified access to commonly used host filesystem directories across Android, iOS, macOS, Linux, and Windows. 
 
-This plugin leverages direct native interop using **Java Native Interface (JNI)** on Android, and **Objective-C FFI** on iOS and macOS.
+This plugin leverages direct native interop without MethodChannels:
+- **Android**: Java Native Interface (JNI via `package:jni`)
+- **iOS & macOS**: Objective-C FFI via `package:objective_c`
+- **Linux**: XDG Base Directory specification via `package:xdg_directories`
+- **Windows**: Win32 Shell Known Folders via `package:win32`
 
 ---
 
@@ -13,24 +17,24 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 
 | | Android | iOS | macOS | Linux | Windows |
 |---|---|---|---|---|---|
-| **Support** | API 21+ | 13.0+ | 10.15+ | ❌ | ❌ |
+| **Support** | API 21+ | 13.0+ | 10.15+ | Any | Windows 10+ |
 
 ---
 
 ## Platform & Method Support
 
-| Method | Android | iOS | macOS | Description |
-|---|---|---|---|---|
-| `getTemporaryDirectory()` | ✅ | ✅ | ✅ | Temporary directory for cache files (subject to OS cleanup). |
-| `getApplicationSupportDirectory()` | ✅ | ✅ | ✅ | Application-created directory for app state, databases, etc. |
-| `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
-| `getApplicationCacheDirectory()` | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
-| `getApplicationNoBackupDirectory()` | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
-| `getExternalStorageDirectory(dir)` | ✅ | ❌ | ❌ | External storage directory for a given `StorageDirectory`. |
-| `getExternalStorageDirectories(dirs)` | ✅ | ❌ | ❌ | List of external storage directories for target `dirs`. |
-| `getExternalCacheDirectories()` | ✅ | ❌ | ❌ | List of external cache directories (`Context.getExternalCacheDirs`). |
-| `getDownloadsDirectory()` | ✅ | ❌ | ✅ | User/app downloads directory. |
-| `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
+| Method | Android | iOS | macOS | Linux | Windows | Description |
+|---|---|---|---|---|---|---|
+| `getTemporaryDirectory()` | ✅ | ✅ | ✅ | ✅ | ✅ | Temporary directory for cache files (subject to OS cleanup). |
+| `getApplicationSupportDirectory()` | ✅ | ✅ | ✅ | ✅ | ✅ | Application-created directory for app state, databases, etc. |
+| `getApplicationDocumentsDirectory()` | ✅ | ✅ | ✅ | ✅ | ✅ | User-accessible directory for persistent documents/profiles. |
+| `getApplicationCacheDirectory()` | ✅ | ✅ | ✅ | ✅ | ✅ | Cache directory (persists longer than temporary files). |
+| `getApplicationNoBackupDirectory()` | ✅ | ✅ | ✅ | ✅ | ✅ | Resolves a default directory that is excluded from backups. |
+| `getExternalStorageDirectory(dir)` | ✅ | ❌ | ❌ | ❌ | ❌ | External storage directory for a given `StorageDirectory`. |
+| `getExternalStorageDirectories(dirs)` | ✅ | ❌ | ❌ | ❌ | ❌ | List of external storage directories for target `dirs`. |
+| `getExternalCacheDirectories()` | ✅ | ❌ | ❌ | ❌ | ❌ | List of external cache directories (`Context.getExternalCacheDirs`). |
+| `getDownloadsDirectory()` | ✅ | ❌ | ✅ | ✅ | ✅ | User/app downloads directory. |
+| `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | ❌ | ❌ | Programmatically toggles the backup exclusion flag. |
 
 ---
 
@@ -38,8 +42,21 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 
 - **Direct interop**: Built completely with JNI and FFI interop—no MethodChannels.
 - **Tree shakeable**: Platform-specific code and dependencies are only compiled and included for their target platform.
-- **Dedicated No-Backup Directories**: Provides a default folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems.
+- **Desktop support**: Native Linux (XDG) and Windows (Win32 Known Folders) support.
+- **Dedicated No-Backup Directories**: Provides a default folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems where supported.
 - **Custom exclusions**: Mark any arbitrary file or folder on iOS/macOS to be skipped during iCloud/iTunes backups.
+
+---
+
+## Federated Architecture
+
+`path_manager` is structured as a federated Flutter monorepo managed via Dart Pub Workspaces:
+- [`path_manager`](file:///Users/maranix/Developer/path_manager/packages/path_manager): App-facing facade package (v0.9.0).
+- [`path_manager_platform_interface`](file:///Users/maranix/Developer/path_manager/packages/path_manager_platform_interface): Common platform interface and models (v0.9.0).
+- [`path_manager_android`](file:///Users/maranix/Developer/path_manager/packages/path_manager_android): Android implementation using JNI via FFI.
+- [`path_manager_foundation`](file:///Users/maranix/Developer/path_manager/packages/path_manager_foundation): iOS and macOS implementation using Foundation Objective-C FFI.
+- [`path_manager_linux`](file:///Users/maranix/Developer/path_manager/packages/path_manager_linux): Linux desktop implementation using XDG Base Directory specification.
+- [`path_manager_windows`](file:///Users/maranix/Developer/path_manager/packages/path_manager_windows): Windows desktop implementation using Win32 Shell Known Folders via FFI.
 
 ---
 
@@ -49,7 +66,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  path_manager: ^0.8.0
+  path_manager: ^0.9.0
 ```
 
 Then run:
@@ -281,18 +298,18 @@ Contributions and suggestions are welcome to this project!
 
 ### Setting Up For Local Development
 
-1. Clone the repository and run dependencies setup:
+1. Clone the repository and run dependencies setup at the workspace root:
    ```bash
-   flutter pub get
+   dart pub get
    ```
 2. Generate FFI/JNI bindings:
    - For Android (requires `JAVA_HOME` pointing to a JDK):
      ```bash
-     dart run tool/jnigen.dart
+     cd packages/path_manager_android && dart run tool/jnigen.dart
      ```
    - For iOS/macOS:
      ```bash
-     dart run tool/ffigen.dart
+     cd packages/path_manager_foundation && dart run tool/ffigen.dart
      ```
 3. Format all files before pushing:
    ```bash
@@ -301,9 +318,13 @@ Contributions and suggestions are welcome to this project!
 
 ### Running Tests
 
-Run the test suite on your development machine (macOS/Linux/Windows):
+Run the test suite across workspace packages:
 ```bash
-dart test
+flutter test packages/path_manager
+flutter test packages/path_manager_platform_interface
+flutter test packages/path_manager_foundation
+flutter test packages/path_manager_linux
+flutter test packages/path_manager_windows
 ```
 
 ---

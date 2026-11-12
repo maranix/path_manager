@@ -1,5 +1,7 @@
+import 'dart:ffi';
 import 'dart:io';
 
+import 'package:ffi/ffi.dart' as pkg_ffi;
 import 'package:path/path.dart' as p;
 import 'package:path_manager_platform_interface/path_manager_platform_interface.dart';
 import 'package:win32/win32.dart';
@@ -10,15 +12,20 @@ typedef KnownFolderPathResolver = String? Function(GUID folderId);
 /// Signature for resolving the Windows temporary directory path string.
 typedef TempPathResolver = String? Function();
 
+/// Signature for resolving the capacity of the volume containing a path.
+typedef DiskSpaceResolver = DiskSpace? Function(String path);
+
 /// The Windows implementation of [PlatformPathManager] using Win32 Shell Known Folders via FFI.
 class WindowsPathManager extends PlatformPathManager {
   /// Creates a new [WindowsPathManager] with optional resolvers for unit testing.
   WindowsPathManager({
     KnownFolderPathResolver? knownFolderPathResolver,
     TempPathResolver? tempPathResolver,
+    DiskSpaceResolver? diskSpaceResolver,
   }) : _knownFolderPathResolver =
            knownFolderPathResolver ?? _defaultGetKnownFolderPath,
-       _tempPathResolver = tempPathResolver ?? _defaultGetTempPath;
+       _tempPathResolver = tempPathResolver ?? _defaultGetTempPath,
+       _diskSpaceResolver = diskSpaceResolver ?? _defaultGetDiskSpace;
 
   /// Registers the Windows implementation of [PlatformPathManager].
   static void registerWith() {
@@ -27,6 +34,7 @@ class WindowsPathManager extends PlatformPathManager {
 
   final KnownFolderPathResolver _knownFolderPathResolver;
   final TempPathResolver _tempPathResolver;
+  final DiskSpaceResolver _diskSpaceResolver;
 
   static String? _defaultGetKnownFolderPath(GUID folderId) {
     if (!Platform.isWindows) return null;
@@ -72,34 +80,96 @@ class WindowsPathManager extends PlatformPathManager {
     }
   }
 
-  @override
-  Future<String?> getTemporaryPath() async {
-    return _tempPathResolver();
+  static DiskSpace? _defaultGetDiskSpace(String path) {
+    if (!Platform.isWindows) return null;
+
+    // GetDiskFreeSpaceExW expects a directory on the target volume.
+    final target = FileSystemEntity.isFileSync(path) ? p.dirname(path) : path;
+    final targetPtr = target.toNativeUtf16();
+    final freePtr = pkg_ffi.calloc<Uint64>();
+    final totalPtr = pkg_ffi.calloc<Uint64>();
+    try {
+      final result = GetDiskFreeSpaceEx(
+        PCWSTR(targetPtr),
+        freePtr,
+        totalPtr,
+        null,
+      );
+      if (!result.value) return null;
+      return DiskSpace(
+        freeBytes: freePtr.value,
+        totalBytes: totalPtr.value,
+      );
+    } catch (_) {
+      return null;
+    } finally {
+      free(targetPtr);
+      free(freePtr);
+      free(totalPtr);
+    }
   }
 
   @override
-  Future<String?> getApplicationSupportPath() async {
-    return _knownFolderPathResolver(FOLDERID_RoamingAppData);
-  }
+  String? getTemporaryPathSync() => _tempPathResolver();
 
   @override
-  Future<String?> getDocumentsPath() async {
-    return _knownFolderPathResolver(FOLDERID_Documents);
-  }
+  String? getApplicationSupportPathSync() =>
+      _knownFolderPathResolver(FOLDERID_RoamingAppData);
 
   @override
-  Future<String?> getApplicationCachePath() async {
-    return _knownFolderPathResolver(FOLDERID_LocalAppData);
-  }
+  String? getDocumentsPathSync() =>
+      _knownFolderPathResolver(FOLDERID_Documents);
 
   @override
-  Future<String?> getDownloadsPath() async {
-    return _knownFolderPathResolver(FOLDERID_Downloads);
+  String? getApplicationCachePathSync() =>
+      _knownFolderPathResolver(FOLDERID_LocalAppData);
+
+  @override
+  String? getDownloadsPathSync() =>
+      _knownFolderPathResolver(FOLDERID_Downloads);
+
+  @override
+  String? getDesktopPathSync() => _knownFolderPathResolver(FOLDERID_Desktop);
+
+  @override
+  String? getPicturesPathSync() => _knownFolderPathResolver(FOLDERID_Pictures);
+
+  @override
+  String? getMusicPathSync() => _knownFolderPathResolver(FOLDERID_Music);
+
+  @override
+  String? getVideosPathSync() => _knownFolderPathResolver(FOLDERID_Videos);
+
+  @override
+  Future<String?> getTemporaryPath() async => getTemporaryPathSync();
+
+  @override
+  Future<String?> getApplicationSupportPath() async =>
+      getApplicationSupportPathSync();
+
+  @override
+  Future<String?> getDocumentsPath() async => getDocumentsPathSync();
+
+  @override
+  Future<String?> getApplicationCachePath() async =>
+      getApplicationCachePathSync();
+
+  @override
+  Future<String?> getDownloadsPath() async => getDownloadsPathSync();
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) {
+    final target =
+        path ??
+        getApplicationSupportPathSync() ??
+        getApplicationCachePathSync();
+    if (target == null) return null;
+    return _diskSpaceResolver(target);
   }
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async {
-    final supportPath = await getApplicationSupportPath();
+    final supportPath = getApplicationSupportPathSync();
     if (supportPath == null) return null;
 
     final noBackupPath = p.join(supportPath, '__no_backup__');

@@ -15,6 +15,14 @@ void main() {
     if (Platform.isLinux) {
       final temp = await PlatformPathManager.instance.getTemporaryPath();
       expect(temp, isNotNull);
+      expect(PlatformPathManager.instance.getTemporaryPathSync(), temp);
+
+      expect(PlatformPathManager.instance.getDesktopPathSync(), isNotEmpty);
+      expect(PlatformPathManager.instance.getVideosPathSync(), isNotEmpty);
+
+      final space = PlatformPathManager.instance.getDiskSpaceSync();
+      expect(space, isNotNull);
+      expect(space!.totalBytes, greaterThan(0));
     }
   });
 }

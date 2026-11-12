@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze_and_unit_tests:
+    name: Analysis & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Verify Formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Static Analysis
+        run: dart analyze .
+
+      - name: Run Unit Tests
+        run: |
+          for pkg in packages/path_manager_platform_interface packages/path_manager_android packages/path_manager_linux packages/path_manager_windows packages/path_manager; do
+            echo "Testing $pkg..."
+            (cd "$pkg" && flutter test)
+          done
+
+      - name: Verify Example App Tests
+        run: |
+          for ex in packages/path_manager/example packages/path_manager_android/example packages/path_manager_linux/example packages/path_manager_windows/example; do
+            echo "Testing $ex..."
+            (cd "$ex" && flutter test)
+          done
+
+      - name: Dry-Run Publish All Packages
+        run: |
+          for pkg in packages/path_manager_platform_interface packages/path_manager_android packages/path_manager_foundation packages/path_manager_linux packages/path_manager_windows packages/path_manager; do
+            echo "Dry-run publishing $pkg..."
+            (cd "$pkg" && dart pub publish --dry-run)
+          done
+
+  linux:
+    name: Linux Native Build & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          cache: true
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev xvfb
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Linux Example Application
+        run: |
+          cd packages/path_manager/example
+          flutter build linux --debug
+
+      - name: Run Linux Integration Tests
+        run: |
+          cd packages/path_manager/example
+          xvfb-run --auto-servernum flutter test integration_test -d linux
+
+  windows:
+    name: Windows Native Build & Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Windows Example Application
+        run: |
+          cd packages/path_manager/example
+          flutter build windows --debug
+
+      - name: Run Windows Integration Tests
+        run: |
+          cd packages/path_manager/example
+          flutter test integration_test -d windows
+
+  macos_and_ios:
+    name: macOS & iOS Native Builds & Tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Foundation Unit Tests
+        run: |
+          cd packages/path_manager_foundation
+          flutter test
+
+      - name: Run Foundation Example Tests
+        run: |
+          cd packages/path_manager_foundation/example
+          flutter test
+
+      - name: Build macOS Example Application
+        run: |
+          cd packages/path_manager/example
+          flutter build macos --debug
+
+      - name: Run macOS Integration Tests
+        run: |
+          cd packages/path_manager/example
+          flutter test integration_test -d macos
+
+      - name: Build iOS Example Application
+        run: |
+          cd packages/path_manager/example
+          flutter build ios --no-codesign --debug
+
+  android:
+    name: Android Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Android Example APK
+        run: |
+          cd packages/path_manager/example
+          flutter build apk --debug

@@ -18,69 +18,112 @@ class FoundationPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getTemporaryPath() async {
+  String? getTemporaryPathSync() {
     final manager = NSFileManager.getDefaultManager();
     final url = manager.temporaryDirectory;
     return url.path?.toDartString();
   }
 
   @override
-  Future<String?> getApplicationSupportPath() => _getPathForDirectory(
+  String? getApplicationSupportPathSync() => _getPathForDirectorySync(
     NSSearchPathDirectory.NSApplicationSupportDirectory,
   );
 
   @override
-  Future<String?> getDocumentsPath() => _getPathForDirectory(
+  String? getDocumentsPathSync() => _getPathForDirectorySync(
     NSSearchPathDirectory.NSDocumentDirectory,
   );
 
   @override
-  Future<String?> getApplicationCachePath() => _getPathForDirectory(
+  String? getApplicationCachePathSync() => _getPathForDirectorySync(
     NSSearchPathDirectory.NSCachesDirectory,
   );
 
   @override
-  Future<String?> getExternalStoragePath(StorageDirectory dir) async {
-    throw UnsupportedError(
-      'External storage directories are not supported on iOS/macOS as Apple sandboxing '
-      'does not provide an external storage concept. Use getApplicationDocumentsDirectory() '
-      'or getApplicationSupportDirectory() instead.',
-    );
-  }
-
-  @override
-  Future<List<String>?> getExternalStoragePaths([
-    List<StorageDirectory> dirs = StorageDirectory.values,
-  ]) async {
-    throw UnsupportedError(
-      'External storage directories are not supported on iOS/macOS as Apple sandboxing '
-      'does not provide an external storage concept. Use getApplicationDocumentsDirectory() '
-      'or getApplicationSupportDirectory() instead.',
-    );
-  }
-
-  @override
-  Future<List<String>?> getExternalCachePaths() async {
-    throw UnsupportedError(
-      'External cache directories are not supported on iOS/macOS as Apple sandboxing '
-      'does not provide an external cache concept. Use getApplicationCacheDirectory() instead.',
-    );
-  }
-
-  @override
-  Future<String?> getDownloadsPath() async {
+  String? getDownloadsPathSync() {
     if (Platform.isIOS) {
       throw UnsupportedError(
         'Downloads directory is not supported on iOS due to platform sandboxing. '
         'Use getApplicationDocumentsDirectory() instead.',
       );
     }
-    return _getPathForDirectory(NSSearchPathDirectory.NSDownloadsDirectory);
+    return _getPathForDirectorySync(NSSearchPathDirectory.NSDownloadsDirectory);
   }
 
-  Future<String?> _getPathForDirectory(
-    NSSearchPathDirectory directory,
-  ) async {
+  @override
+  String? getDesktopPathSync() =>
+      _getUserMediaPathSync(NSSearchPathDirectory.NSDesktopDirectory);
+
+  @override
+  String? getPicturesPathSync() =>
+      _getUserMediaPathSync(NSSearchPathDirectory.NSPicturesDirectory);
+
+  @override
+  String? getMusicPathSync() =>
+      _getUserMediaPathSync(NSSearchPathDirectory.NSMusicDirectory);
+
+  @override
+  String? getVideosPathSync() =>
+      _getUserMediaPathSync(NSSearchPathDirectory.NSMoviesDirectory);
+
+  @override
+  Future<String?> getTemporaryPath() async => getTemporaryPathSync();
+
+  @override
+  Future<String?> getApplicationSupportPath() async =>
+      getApplicationSupportPathSync();
+
+  @override
+  Future<String?> getDocumentsPath() async => getDocumentsPathSync();
+
+  @override
+  Future<String?> getApplicationCachePath() async =>
+      getApplicationCachePathSync();
+
+  @override
+  Future<String?> getDownloadsPath() async => getDownloadsPathSync();
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) {
+    final target =
+        path ??
+        getApplicationSupportPathSync() ??
+        getApplicationCachePathSync();
+    if (target == null) return null;
+
+    try {
+      final attributes = NSFileManager.getDefaultManager()
+          .attributesOfFileSystemForPath(objc.NSString(target));
+      if (attributes == null) return null;
+
+      final free = attributes.objectForKey(
+        objc.NSString('NSFileSystemFreeSize'),
+      );
+      final total = attributes.objectForKey(objc.NSString('NSFileSystemSize'));
+      if (free == null || total == null) return null;
+
+      return DiskSpace(
+        freeBytes: objc.NSNumber.as(free).unsignedLongLongValue,
+        totalBytes: objc.NSNumber.as(total).unsignedLongLongValue,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Resolves a user media directory, rejecting platforms without global
+  /// user directories.
+  String? _getUserMediaPathSync(NSSearchPathDirectory directory) {
+    if (Platform.isIOS) {
+      throw UnsupportedError(
+        'Global user media directories are not supported on iOS due to '
+        'platform sandboxing. Use getApplicationDocumentsDirectory() instead.',
+      );
+    }
+    return _getPathForDirectorySync(directory);
+  }
+
+  String? _getPathForDirectorySync(NSSearchPathDirectory directory) {
     final manager = NSFileManager.getDefaultManager();
 
     // objc.NSSearchPathDomainMask.NSUserDomainMask = 1
@@ -95,7 +138,7 @@ class FoundationPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async {
-    final supportPath = await getApplicationSupportPath();
+    final supportPath = getApplicationSupportPathSync();
     if (supportPath == null) return null;
 
     final noBackupPath = '$supportPath/__no_backup__';
@@ -165,5 +208,33 @@ class FoundationPathManager extends PlatformPathManager {
         path,
       );
     }
+  }
+
+  @override
+  Future<String?> getExternalStoragePath(StorageDirectory dir) async {
+    throw UnsupportedError(
+      'External storage directories are not supported on iOS/macOS as Apple sandboxing '
+      'does not provide an external storage concept. Use getApplicationDocumentsDirectory() '
+      'or getApplicationSupportDirectory() instead.',
+    );
+  }
+
+  @override
+  Future<List<String>?> getExternalStoragePaths([
+    List<StorageDirectory> dirs = StorageDirectory.values,
+  ]) async {
+    throw UnsupportedError(
+      'External storage directories are not supported on iOS/macOS as Apple sandboxing '
+      'does not provide an external storage concept. Use getApplicationDocumentsDirectory() '
+      'or getApplicationSupportDirectory() instead.',
+    );
+  }
+
+  @override
+  Future<List<String>?> getExternalCachePaths() async {
+    throw UnsupportedError(
+      'External cache directories are not supported on iOS/macOS as Apple sandboxing '
+      'does not provide an external cache concept. Use getApplicationCacheDirectory() instead.',
+    );
   }
 }

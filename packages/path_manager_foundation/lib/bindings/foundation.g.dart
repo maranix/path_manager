@@ -80,6 +80,32 @@ extension NSFileManager$Methods on NSFileManager {
     }
   }
 
+  /// attributesOfFileSystemForPath:error:
+  objc.NSDictionary? attributesOfFileSystemForPath(objc.NSString path) {
+    final _$$ref = object$.ref;
+    final _$$ref$1 = path.ref;
+    objc.checkOsVersionInternal(
+      'NSFileManager.attributesOfFileSystemForPath:error:',
+      iOS: (false, (2, 0, 0)),
+      macOS: (false, (10, 5, 0)),
+    );
+    final $err = pkg_ffi.calloc<ffi.Pointer<objc.ObjCObjectImpl>>();
+    try {
+      final $ret = _objc_msgSend_1lhpu4m(
+        _$$ref.pointer,
+        _sel_attributesOfFileSystemForPath_error_,
+        _$$ref$1.pointer,
+        $err,
+      );
+      objc.NSErrorException.checkErrorPointer($err.value);
+      return $ret.address == 0
+          ? null
+          : objc.NSDictionary.fromPointer($ret, retain: true, release: true);
+    } finally {
+      pkg_ffi.calloc.free($err);
+    }
+  }
+
   /// createDirectoryAtURL:withIntermediateDirectories:attributes:error:
   bool createDirectoryAtURL(
     objc.NSURL url, {
@@ -300,6 +326,25 @@ final _objc_msgSend_1crui9 = objc.msgSendPointer
         ffi.Pointer<ffi.Pointer<objc.ObjCObjectImpl>>,
       )
     >();
+final _objc_msgSend_1lhpu4m = objc.msgSendPointer
+    .cast<
+      ffi.NativeFunction<
+        ffi.Pointer<objc.ObjCObjectImpl> Function(
+          ffi.Pointer<objc.ObjCObjectImpl>,
+          ffi.Pointer<objc.ObjCSelector>,
+          ffi.Pointer<objc.ObjCObjectImpl>,
+          ffi.Pointer<ffi.Pointer<objc.ObjCObjectImpl>>,
+        )
+      >
+    >()
+    .asFunction<
+      ffi.Pointer<objc.ObjCObjectImpl> Function(
+        ffi.Pointer<objc.ObjCObjectImpl>,
+        ffi.Pointer<objc.ObjCSelector>,
+        ffi.Pointer<objc.ObjCObjectImpl>,
+        ffi.Pointer<ffi.Pointer<objc.ObjCObjectImpl>>,
+      )
+    >();
 final _objc_msgSend_1sotr3r = objc.msgSendPointer
     .cast<
       ffi.NativeFunction<
@@ -342,6 +387,9 @@ final _objc_msgSend_k3avh6 = objc.msgSendPointer
     >();
 late final _sel_URLForDirectory_inDomain_appropriateForURL_create_error_ = objc
     .registerName("URLForDirectory:inDomain:appropriateForURL:create:error:");
+late final _sel_attributesOfFileSystemForPath_error_ = objc.registerName(
+  "attributesOfFileSystemForPath:error:",
+);
 late final _sel_createDirectoryAtURL_withIntermediateDirectories_attributes_error_ =
     objc.registerName(
       "createDirectoryAtURL:withIntermediateDirectories:attributes:error:",

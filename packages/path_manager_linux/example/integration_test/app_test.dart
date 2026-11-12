@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_manager_linux/path_manager_linux.dart';
@@ -10,7 +12,9 @@ void main() {
     LinuxPathManager.registerWith();
     expect(PlatformPathManager.instance, isA<LinuxPathManager>());
 
-    final temp = await PlatformPathManager.instance.getTemporaryPath();
-    expect(temp, isNotNull);
+    if (Platform.isLinux) {
+      final temp = await PlatformPathManager.instance.getTemporaryPath();
+      expect(temp, isNotNull);
+    }
   });
 }

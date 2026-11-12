@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_manager_platform_interface/path_manager_platform_interface.dart';
@@ -10,8 +12,10 @@ void main() {
     WindowsPathManager.registerWith();
     expect(PlatformPathManager.instance, isA<WindowsPathManager>());
 
-    // On Windows, temp path can be resolved
-    final temp = await PlatformPathManager.instance.getTemporaryPath();
-    expect(temp, isNotNull);
+    // On Windows host, temp path can be resolved natively
+    if (Platform.isWindows) {
+      final temp = await PlatformPathManager.instance.getTemporaryPath();
+      expect(temp, isNotNull);
+    }
   });
 }

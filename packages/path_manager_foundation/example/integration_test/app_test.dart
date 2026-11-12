@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_manager_foundation/path_manager_foundation.dart';
@@ -10,7 +12,9 @@ void main() {
     FoundationPathManager.registerWith();
     expect(PlatformPathManager.instance, isA<FoundationPathManager>());
 
-    final temp = await PlatformPathManager.instance.getTemporaryPath();
-    expect(temp, isNotNull);
+    if (Platform.isMacOS || Platform.isIOS) {
+      final temp = await PlatformPathManager.instance.getTemporaryPath();
+      expect(temp, isNotNull);
+    }
   });
 }

@@ -583,6 +583,30 @@ void main() {
         throwsA(isA<MissingPlatformDirectoryException>()),
       );
     });
+
+    test('creates the base directory when it does not exist yet', () async {
+      fakeManager.applicationCachePath = '${tempRoot.path}/missing/cache';
+
+      final dir = await PathManager.getApplicationCacheSubdirectory('images');
+
+      expect(dir.path, '${tempRoot.path}/missing/cache/images');
+      expect(await dir.exists(), isTrue);
+    });
+
+    test('rejects symlinks that escape the base before creating', () async {
+      if (Platform.isWindows) return;
+
+      final outside = Directory('${tempRoot.path}/outside');
+      await outside.create();
+      final link = Link('${supportDir.path}/escape');
+      await link.create(outside.path);
+
+      await expectLater(
+        PathManager.getApplicationSupportSubdirectory('escape/child'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(await Directory('${outside.path}/child').exists(), isFalse);
+    });
   });
 }
 

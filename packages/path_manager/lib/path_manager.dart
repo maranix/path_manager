@@ -716,6 +716,7 @@ abstract final class PathManager {
     String subpath,
   ) async {
     final candidate = _resolveSubdirectory(base, subpath);
+    await _verifySubdirectoryContainment(base, candidate, subpath);
     await candidate.create(recursive: true);
     await _verifySubdirectoryContainment(base, candidate, subpath);
     return candidate;
@@ -816,18 +817,35 @@ abstract final class PathManager {
     return Directory(candidate);
   }
 
-  /// Verifies that the created subdirectory does not escape [base] through a
-  /// symbolic link. Platforms that cannot resolve symbolic links are left to
-  /// the filesystem's own access checks.
+  /// Verifies that a subdirectory does not escape [base] through a symbolic
+  /// link. When [candidate] does not exist yet, the nearest existing ancestor
+  /// is checked so escaping links are rejected before anything is created.
+  /// Platforms that cannot resolve symbolic links are left to the filesystem's
+  /// own access checks.
   static Future<void> _verifySubdirectoryContainment(
     Directory base,
     Directory candidate,
     String subpath,
   ) async {
+    var existing = candidate;
+    while (!await existing.exists()) {
+      final parent = existing.parent;
+      if (p.equals(parent.path, existing.path)) break;
+      existing = parent;
+    }
+
+    // If the nearest existing ancestor lies outside the base, the base itself
+    // does not exist yet. The post-creation check validates the final path.
+    if (!p.equals(existing.path, base.path) &&
+        !p.isWithin(base.path, existing.path)) {
+      return;
+    }
+
     try {
       final resolvedBase = await base.resolveSymbolicLinks();
-      final resolvedCandidate = await candidate.resolveSymbolicLinks();
-      if (!p.isWithin(resolvedBase, resolvedCandidate)) {
+      final resolvedExisting = await existing.resolveSymbolicLinks();
+      if (!p.equals(resolvedBase, resolvedExisting) &&
+          !p.isWithin(resolvedBase, resolvedExisting)) {
         throw ArgumentError.value(
           subpath,
           'subpath',

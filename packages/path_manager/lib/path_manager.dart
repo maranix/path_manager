@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:path_manager_platform_interface/path_manager_platform_interface.dart';
 
 export 'package:path_manager_platform_interface/path_manager_platform_interface.dart'
     show
         BackupExclusionConflictException,
+        DiskSpace,
         MissingPlatformDirectoryException,
         PlatformPathManager,
         StorageDirectory;
@@ -300,5 +302,540 @@ abstract final class PathManager {
       path,
       exclude,
     );
+  }
+
+  /// Gets the path to the temporary directory synchronously.
+  ///
+  /// This avoids the event loop entirely, which is useful during `main()`,
+  /// dependency-injection container setup, and database initialization.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final tempDir = PathManager.getTemporaryDirectorySync();
+  /// ```
+  static Directory getTemporaryDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getTemporaryPathSync(),
+    'temporary',
+  );
+
+  /// Gets the path to the application support directory synchronously.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final supportDir = PathManager.getApplicationSupportDirectorySync();
+  /// final database = File('${supportDir.path}/app.db');
+  /// ```
+  static Directory getApplicationSupportDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getApplicationSupportPathSync(),
+    'application support',
+  );
+
+  /// Gets the path to the application documents directory synchronously.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final docsDir = PathManager.getApplicationDocumentsDirectorySync();
+  /// ```
+  static Directory getApplicationDocumentsDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getDocumentsPathSync(),
+    'application documents',
+  );
+
+  /// Gets the path to the application cache directory synchronously.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final cacheDir = PathManager.getApplicationCacheDirectorySync();
+  /// ```
+  static Directory getApplicationCacheDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getApplicationCachePathSync(),
+    'application cache',
+  );
+
+  /// Gets the path to the downloads directory synchronously.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved and an [UnsupportedError] on platforms where downloads are not
+  /// supported (for example, iOS).
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final downloads = PathManager.getDownloadsDirectorySync();
+  /// ```
+  static Directory getDownloadsDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getDownloadsPathSync(),
+    'downloads',
+  );
+
+  /// Gets the path to the user's desktop directory.
+  ///
+  /// Supported on Windows, macOS, and Linux. Throws an [UnsupportedError] on
+  /// Android and iOS, which use sandboxed storage instead of global user
+  /// directories.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final desktop = await PathManager.getDesktopDirectory();
+  /// ```
+  static Future<Directory> getDesktopDirectory() async => _requireDirectory(
+    await PlatformPathManager.instance.getDesktopPath(),
+    'desktop',
+  );
+
+  /// Gets the path to the user's pictures directory.
+  ///
+  /// Supported on Windows, macOS, and Linux. Throws an [UnsupportedError] on
+  /// Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final pictures = await PathManager.getPicturesDirectory();
+  /// ```
+  static Future<Directory> getPicturesDirectory() async => _requireDirectory(
+    await PlatformPathManager.instance.getPicturesPath(),
+    'pictures',
+  );
+
+  /// Gets the path to the user's music directory.
+  ///
+  /// Supported on Windows, macOS, and Linux. Throws an [UnsupportedError] on
+  /// Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final music = await PathManager.getMusicDirectory();
+  /// ```
+  static Future<Directory> getMusicDirectory() async => _requireDirectory(
+    await PlatformPathManager.instance.getMusicPath(),
+    'music',
+  );
+
+  /// Gets the path to the user's videos directory.
+  ///
+  /// Supported on Windows, macOS, and Linux. Throws an [UnsupportedError] on
+  /// Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final videos = await PathManager.getVideosDirectory();
+  /// ```
+  static Future<Directory> getVideosDirectory() async => _requireDirectory(
+    await PlatformPathManager.instance.getVideosPath(),
+    'videos',
+  );
+
+  /// Gets the path to the user's desktop directory synchronously.
+  ///
+  /// Throws an [UnsupportedError] on Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  static Directory getDesktopDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getDesktopPathSync(),
+    'desktop',
+  );
+
+  /// Gets the path to the user's pictures directory synchronously.
+  ///
+  /// Throws an [UnsupportedError] on Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  static Directory getPicturesDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getPicturesPathSync(),
+    'pictures',
+  );
+
+  /// Gets the path to the user's music directory synchronously.
+  ///
+  /// Throws an [UnsupportedError] on Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  static Directory getMusicDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getMusicPathSync(),
+    'music',
+  );
+
+  /// Gets the path to the user's videos directory synchronously.
+  ///
+  /// Throws an [UnsupportedError] on Android and iOS.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the directory cannot be
+  /// resolved.
+  static Directory getVideosDirectorySync() => _requireDirectory(
+    PlatformPathManager.instance.getVideosPathSync(),
+    'videos',
+  );
+
+  /// Queries the capacity of the filesystem volume that contains [path].
+  ///
+  /// [path] selects the volume to query; it may refer to a directory or a file
+  /// on that volume. The returned [DiskSpace] describes the volume's free and
+  /// total capacity in bytes, not the size of the entity at [path].
+  ///
+  /// When [path] is `null`, the application support directory is used.
+  ///
+  /// Only paths that the application can access are supported. On mobile
+  /// platforms the result describes the shared volume rather than an
+  /// app-specific quota.
+  ///
+  /// Throws a [FileSystemException] if the volume cannot be queried.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final space = await PathManager.getDiskSpace();
+  /// if (space.freeBytes < requiredBytes) {
+  ///   print('Not enough storage: ${PathManager.formatBytes(space.freeBytes)} free');
+  /// }
+  /// ```
+  static Future<DiskSpace> getDiskSpace({String? path}) async {
+    final space = await PlatformPathManager.instance.getDiskSpace(path: path);
+    if (space == null) {
+      throw FileSystemException('Unable to query disk space', path);
+    }
+    return space;
+  }
+
+  /// Queries the capacity of the filesystem volume that contains [path]
+  /// synchronously.
+  ///
+  /// [path] selects the volume to query; it may refer to a directory or a file
+  /// on that volume. The returned [DiskSpace] describes the volume's free and
+  /// total capacity in bytes, not the size of the entity at [path].
+  ///
+  /// When [path] is `null`, the application support directory is used.
+  ///
+  /// Throws a [FileSystemException] if the volume cannot be queried.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final space = PathManager.getDiskSpaceSync();
+  /// print('${space.freeBytes} of ${space.totalBytes} bytes free');
+  /// ```
+  static DiskSpace getDiskSpaceSync({String? path}) {
+    final space = PlatformPathManager.instance.getDiskSpaceSync(path: path);
+    if (space == null) {
+      throw FileSystemException('Unable to query disk space', path);
+    }
+    return space;
+  }
+
+  /// Calculates the total size of the application cache directory in bytes.
+  ///
+  /// The directory is walked recursively without following symbolic links.
+  /// Returns `0` when the cache directory does not exist. Files that disappear
+  /// or cannot be read while walking are skipped.
+  ///
+  /// Use [formatBytes] to render the result for display.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final bytes = await PathManager.getApplicationCacheSize();
+  /// print('Cache: ${PathManager.formatBytes(bytes)}');
+  /// ```
+  static Future<int> getApplicationCacheSize() async {
+    final cache = await getApplicationCacheDirectory();
+    if (!await cache.exists()) return 0;
+
+    var total = 0;
+    await for (final entity in cache.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is! File) continue;
+      try {
+        total += await entity.length();
+      } on FileSystemException {
+        // The file may have been removed or locked concurrently.
+      }
+    }
+    return total;
+  }
+
+  /// Deletes the contents of the application cache directory.
+  ///
+  /// The cache directory itself is preserved because the operating system
+  /// expects it to exist. Entries that are locked or removed concurrently are
+  /// skipped.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// await PathManager.clearApplicationCache();
+  /// ```
+  static Future<void> clearApplicationCache() async {
+    final cache = await getApplicationCacheDirectory();
+    if (!await cache.exists()) return;
+
+    await for (final entity in cache.list(followLinks: false)) {
+      try {
+        await entity.delete(recursive: true);
+      } on FileSystemException {
+        // The entry may be locked or already removed.
+      }
+    }
+  }
+
+  /// Formats a byte count into a human-readable string.
+  ///
+  /// Uses 1024-based units and one decimal place for values of 1 KB and above.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// PathManager.formatBytes(0);      // '0 B'
+  /// PathManager.formatBytes(1536);   // '1.5 KB'
+  /// PathManager.formatBytes(14994636); // '14.3 MB'
+  /// ```
+  static String formatBytes(int bytes) {
+    if (bytes < 0) {
+      throw ArgumentError.value(bytes, 'bytes', 'must not be negative');
+    }
+    if (bytes < 1024) return '$bytes B';
+
+    const units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
+    var value = bytes / 1024;
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    return '${value.toStringAsFixed(1)} ${units[unit]}';
+  }
+
+  /// Resolves and creates a namespaced subdirectory inside the application
+  /// support directory.
+  ///
+  /// [subpath] must be relative and may contain nested segments, for example
+  /// `database/drift`. Leading separators, drive letters, UNC paths, `..`
+  /// segments, NUL characters, and Windows reserved device names are rejected
+  /// with an [ArgumentError]. Both `/` and `\` are accepted as separators and
+  /// are normalized to the host platform.
+  ///
+  /// Throws a [MissingPlatformDirectoryException] if the base directory cannot
+  /// be resolved.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final dbDir = await PathManager.getApplicationSupportSubdirectory('database');
+  /// final driftDir = await PathManager.getApplicationSupportSubdirectory('database/drift');
+  /// ```
+  static Future<Directory> getApplicationSupportSubdirectory(
+    String subpath,
+  ) async {
+    final base = getApplicationSupportDirectorySync();
+    return _createSubdirectory(base, subpath);
+  }
+
+  /// Resolves and creates a namespaced subdirectory inside the application
+  /// cache directory.
+  ///
+  /// See [getApplicationSupportSubdirectory] for the accepted [subpath] format.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final imageCache = await PathManager.getApplicationCacheSubdirectory('images');
+  /// ```
+  static Future<Directory> getApplicationCacheSubdirectory(
+    String subpath,
+  ) async {
+    final base = getApplicationCacheDirectorySync();
+    return _createSubdirectory(base, subpath);
+  }
+
+  /// Resolves and creates a namespaced subdirectory inside the application
+  /// documents directory.
+  ///
+  /// See [getApplicationSupportSubdirectory] for the accepted [subpath] format.
+  ///
+  /// ### Examples
+  ///
+  /// ```dart
+  /// final projects = await PathManager.getApplicationDocumentsSubdirectory('projects');
+  /// ```
+  static Future<Directory> getApplicationDocumentsSubdirectory(
+    String subpath,
+  ) async {
+    final base = getApplicationDocumentsDirectorySync();
+    return _createSubdirectory(base, subpath);
+  }
+
+  static Directory _requireDirectory(String? path, String name) {
+    if (path == null) {
+      throw MissingPlatformDirectoryException('Unable to get $name directory');
+    }
+    return Directory(path);
+  }
+
+  static final _windowsReservedNames = RegExp(
+    r'^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$',
+    caseSensitive: false,
+  );
+
+  static Future<Directory> _createSubdirectory(
+    Directory base,
+    String subpath,
+  ) async {
+    final candidate = _resolveSubdirectory(base, subpath);
+    await candidate.create(recursive: true);
+    await _verifySubdirectoryContainment(base, candidate, subpath);
+    return candidate;
+  }
+
+  static Directory _resolveSubdirectory(Directory base, String subpath) {
+    if (subpath.isEmpty || subpath.trim().isEmpty) {
+      throw ArgumentError.value(subpath, 'subpath', 'must not be empty');
+    }
+    if (subpath.contains('\u0000')) {
+      throw ArgumentError.value(
+        subpath,
+        'subpath',
+        'must not contain NUL characters',
+      );
+    }
+
+    // Treat both separators as separators so the accepted input is consistent
+    // across platforms, then rebuild the path with the host separator.
+    final normalized = subpath.replaceAll('\\', '/');
+    if (normalized.startsWith('~')) {
+      throw ArgumentError.value(
+        subpath,
+        'subpath',
+        'must be relative to the base directory',
+      );
+    }
+    if (RegExp(r'^[A-Za-z]:').hasMatch(normalized)) {
+      throw ArgumentError.value(
+        subpath,
+        'subpath',
+        'must not contain a drive letter',
+      );
+    }
+    if (normalized.startsWith('//')) {
+      throw ArgumentError.value(
+        subpath,
+        'subpath',
+        'must not be a UNC path',
+      );
+    }
+    if (normalized.startsWith('/')) {
+      throw ArgumentError.value(subpath, 'subpath', 'must not be absolute');
+    }
+
+    final segments = <String>[];
+    for (final segment in normalized.split('/')) {
+      if (segment.isEmpty || segment == '.') continue;
+      if (segment == '..') {
+        throw ArgumentError.value(
+          subpath,
+          'subpath',
+          'must not contain ".." segments',
+        );
+      }
+      if (segment.trim().isEmpty) {
+        throw ArgumentError.value(
+          subpath,
+          'subpath',
+          'must not contain empty segments',
+        );
+      }
+      if (Platform.isWindows) {
+        if (segment.endsWith('.') || segment.endsWith(' ')) {
+          throw ArgumentError.value(
+            subpath,
+            'subpath',
+            'Windows path segments must not end with a dot or space',
+          );
+        }
+        if (_windowsReservedNames.hasMatch(segment)) {
+          throw ArgumentError.value(
+            subpath,
+            'subpath',
+            'must not use a reserved Windows device name',
+          );
+        }
+      }
+      segments.add(segment);
+    }
+
+    if (segments.isEmpty) {
+      throw ArgumentError.value(
+        subpath,
+        'subpath',
+        'must contain at least one path segment',
+      );
+    }
+
+    final candidate = p.normalize(p.joinAll([base.path, ...segments]));
+    if (!p.isWithin(base.path, candidate)) {
+      throw ArgumentError.value(
+        subpath,
+        'subpath',
+        'must resolve inside the base directory',
+      );
+    }
+    return Directory(candidate);
+  }
+
+  /// Verifies that the created subdirectory does not escape [base] through a
+  /// symbolic link. Platforms that cannot resolve symbolic links are left to
+  /// the filesystem's own access checks.
+  static Future<void> _verifySubdirectoryContainment(
+    Directory base,
+    Directory candidate,
+    String subpath,
+  ) async {
+    try {
+      final resolvedBase = await base.resolveSymbolicLinks();
+      final resolvedCandidate = await candidate.resolveSymbolicLinks();
+      if (!p.isWithin(resolvedBase, resolvedCandidate)) {
+        throw ArgumentError.value(
+          subpath,
+          'subpath',
+          'must resolve inside the base directory',
+        );
+      }
+    } on FileSystemException {
+      // Symbolic-link resolution is not available for every path.
+    }
   }
 }

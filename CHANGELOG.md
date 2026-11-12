@@ -1,3 +1,35 @@
+# 1.0.0
+
+* **Synchronous Path Resolution**:
+    - Add synchronous getters for temporary, application support, documents, cache, and downloads directories.
+    - Add synchronous variants for every desktop media directory.
+    - Synchronous getters throw `MissingPlatformDirectoryException` when a directory cannot be resolved, and `UnsupportedError` when the platform does not provide the concept.
+* **Desktop Media Directories**:
+    - Add `getDesktopDirectory()`, `getPicturesDirectory()`, `getMusicDirectory()`, and `getVideosDirectory()` with synchronous counterparts.
+    - Support Windows Known Folders (`FOLDERID_Desktop`, `FOLDERID_Pictures`, `FOLDERID_Music`, `FOLDERID_Videos`), macOS Foundation directories, and Linux XDG user directories.
+    - Throw `UnsupportedError` on Android and iOS, which use sandboxed storage instead of global user directories.
+* **Disk Space**:
+    - Add `getDiskSpace()` and `getDiskSpaceSync()`, reporting the free and total capacity of the **volume containing a path, in bytes**.
+    - Add the `DiskSpace` model with `freeBytes`, `totalBytes`, and `usedBytes`.
+    - `path` selects the volume to query and does not measure the size of the entity at that path. When omitted, the application support directory is used.
+    - Facade methods throw `FileSystemException` when the volume cannot be queried; only app-accessible paths are supported.
+    - Implemented with `GetDiskFreeSpaceExW` on Windows, `attributesOfFileSystemForPath:error:` on Apple platforms, `statvfs` on Linux, and `android.os.StatFs` on Android.
+* **Cache Utilities**:
+    - Add `getApplicationCacheSize()`, which returns the recursive application cache size **in bytes**, skipping symbolic links and files that disappear while walking.
+    - Add `clearApplicationCache()`, which deletes cache contents while preserving the cache directory.
+    - Add `formatBytes()` for 1024-based human-readable byte counts.
+* **Safe Subdirectory Helpers**:
+    - Add `getApplicationSupportSubdirectory()`, `getApplicationCacheSubdirectory()`, and `getApplicationDocumentsSubdirectory()`.
+    - Reject absolute paths, drive letters, UNC paths, `..` segments, NUL characters, whitespace-only segments, and Windows reserved device names with `ArgumentError`.
+    - Accept both `/` and `\` separators, normalize them to the host platform, and verify that created directories remain inside the base directory.
+* **Bindings & Platform Implementations**:
+    - Regenerate Foundation bindings with `attributesOfFileSystemForPath:error:`.
+    - Regenerate Android bindings with a class-aware `jnigen` allowlist that includes `android.os.StatFs`.
+    - Add a direct `ffi` dependency to `path_manager_linux` for `statvfs`.
+* **Documentation & Tests**:
+    - Document byte units and volume semantics for disk space and cache APIs.
+    - Extend unit and integration coverage across all packages and update the example application.
+
 # 0.9.0
 
 * **Federated Architecture**:

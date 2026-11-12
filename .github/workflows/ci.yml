@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -13,7 +11,7 @@ concurrency:
 
 jobs:
   analyze_and_unit_tests:
-    name: Analysis & Unit Tests
+    name: Analysis & Common Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +25,7 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Verify Formatting
+      - name: Verify Code Formatting
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Static Analysis
@@ -40,13 +38,6 @@ jobs:
             (cd "$pkg" && flutter test)
           done
 
-      - name: Verify Example App Tests
-        run: |
-          for ex in packages/path_manager/example packages/path_manager_android/example packages/path_manager_linux/example packages/path_manager_windows/example; do
-            echo "Testing $ex..."
-            (cd "$ex" && flutter test)
-          done
-
       - name: Dry-Run Publish All Packages
         run: |
           for pkg in packages/path_manager_platform_interface packages/path_manager_android packages/path_manager_foundation packages/path_manager_linux packages/path_manager_windows packages/path_manager; do
@@ -55,7 +46,7 @@ jobs:
           done
 
   linux:
-    name: Linux Native Build & Tests
+    name: Linux Native Tests & Integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +57,7 @@ jobs:
           flutter-version: '3.50.0'
           cache: true
 
-      - name: Install Linux Build Dependencies
+      - name: Install Linux Build Dependencies & xvfb
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev xvfb
@@ -74,18 +65,33 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Run Linux Package Unit Tests
+        run: |
+          cd packages/path_manager_linux
+          flutter test
+
+      - name: Run Linux Example Unit/Widget Tests
+        run: |
+          cd packages/path_manager_linux/example
+          flutter test
+
       - name: Build Linux Example Application
         run: |
           cd packages/path_manager/example
           flutter build linux --debug
 
-      - name: Run Linux Integration Tests
+      - name: Run Linux Package Example Integration Tests
+        run: |
+          cd packages/path_manager_linux/example
+          xvfb-run --auto-servernum flutter test integration_test -d linux
+
+      - name: Run Multiplatform Linux Integration Tests
         run: |
           cd packages/path_manager/example
           xvfb-run --auto-servernum flutter test integration_test -d linux
 
   windows:
-    name: Windows Native Build & Tests
+    name: Windows Native Tests & Integration
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,18 +105,33 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Run Windows Package Unit Tests
+        run: |
+          cd packages/path_manager_windows
+          flutter test
+
+      - name: Run Windows Example Unit/Widget Tests
+        run: |
+          cd packages/path_manager_windows/example
+          flutter test
+
       - name: Build Windows Example Application
         run: |
           cd packages/path_manager/example
           flutter build windows --debug
 
-      - name: Run Windows Integration Tests
+      - name: Run Windows Package Example Integration Tests
+        run: |
+          cd packages/path_manager_windows/example
+          flutter test integration_test -d windows
+
+      - name: Run Multiplatform Windows Integration Tests
         run: |
           cd packages/path_manager/example
           flutter test integration_test -d windows
 
   macos_and_ios:
-    name: macOS & iOS Native Builds & Tests
+    name: macOS & iOS Native Tests & Integration
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -124,12 +145,12 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Run Foundation Unit Tests
+      - name: Run Foundation Package Unit Tests
         run: |
           cd packages/path_manager_foundation
           flutter test
 
-      - name: Run Foundation Example Tests
+      - name: Run Foundation Example Unit/Widget Tests
         run: |
           cd packages/path_manager_foundation/example
           flutter test
@@ -139,7 +160,12 @@ jobs:
           cd packages/path_manager/example
           flutter build macos --debug
 
-      - name: Run macOS Integration Tests
+      - name: Run Foundation Example macOS Integration Tests
+        run: |
+          cd packages/path_manager_foundation/example
+          flutter test integration_test -d macos
+
+      - name: Run Multiplatform macOS Integration Tests
         run: |
           cd packages/path_manager/example
           flutter test integration_test -d macos
@@ -149,11 +175,28 @@ jobs:
           cd packages/path_manager/example
           flutter build ios --no-codesign --debug
 
+      - name: Run iOS Simulator Integration Tests
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available 'iPhone' | grep -m 1 -E -o '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+          if [ -n "$DEVICE_ID" ]; then
+            xcrun simctl boot "$DEVICE_ID" || true
+            cd packages/path_manager/example
+            flutter test integration_test -d "$DEVICE_ID"
+          else
+            echo "No iPhone simulator found, skipping iOS integration test run"
+          fi
+
   android:
-    name: Android Build
+    name: Android Tests & Integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Enable KVM group perms for Hardware Acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -170,7 +213,26 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Run Android Package Unit Tests
+        run: |
+          cd packages/path_manager_android
+          flutter test
+
+      - name: Run Android Example Unit/Widget Tests
+        run: |
+          cd packages/path_manager_android/example
+          flutter test
+
       - name: Build Android Example APK
         run: |
           cd packages/path_manager/example
           flutter build apk --debug
+
+      - name: Run Android Emulator Integration Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: cd packages/path_manager/example && flutter test integration_test

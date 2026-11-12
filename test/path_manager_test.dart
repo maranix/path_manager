@@ -47,11 +47,16 @@ void main() {
     });
 
     test('getDownloadsDirectory resolves downloads directory', () async {
-      final dir = await PathManager.getDownloadsDirectory();
       // On macOS, downloads directory is resolved
       if (Platform.isMacOS) {
+        final dir = await PathManager.getDownloadsDirectory();
         expect(dir, isNotNull);
         expect(dir.path, isNotEmpty);
+      } else if (Platform.isIOS) {
+        expect(
+          () => PathManager.getDownloadsDirectory(),
+          throwsA(isA<UnsupportedError>()),
+        );
       }
     });
 

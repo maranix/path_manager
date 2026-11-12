@@ -7,6 +7,8 @@
     - Optimize Foundation bindings by filtering `NSFileManager` methods, eliminating unnecessary block trampolines and native Objective-C compile dependencies.
     - Migrate `jnigen` configuration in `tool/jnigen.dart` to `jnigen` 1.x API.
     - Relocate generated bindings to `lib/bindings/foundation.g.dart` and `lib/bindings/android.g.dart`.
+* **Fixes & Platform Behavior**:
+    - Throw `UnsupportedError` on iOS for `getDownloadsDirectory()` due to Apple sandbox container restrictions.
 * **Refactoring & Modernization**:
     - Modernize exception classes and `StorageDirectory` enum with concise constructor syntax.
     - Remove legacy `FoundationFFI` wrapper call in `FoundationPathManager`.

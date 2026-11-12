@@ -70,9 +70,15 @@ class FoundationPathManager() extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getDownloadsPath() => _getPathForDirectory(
-    NSSearchPathDirectory.NSDownloadsDirectory,
-  );
+  Future<String?> getDownloadsPath() async {
+    if (Platform.isIOS) {
+      throw UnsupportedError(
+        'Downloads directory is not supported on iOS due to platform sandboxing. '
+        'Use getApplicationDocumentsDirectory() instead.',
+      );
+    }
+    return _getPathForDirectory(.NSDownloadsDirectory);
+  }
 
   Future<String?> _getPathForDirectory(
     NSSearchPathDirectory directory,

@@ -29,7 +29,7 @@ This plugin leverages direct native interop using **Java Native Interface (JNI)*
 | `getExternalStorageDirectory(dir)` | ✅ | ❌ | ❌ | External storage directory for a given `StorageDirectory`. |
 | `getExternalStorageDirectories(dirs)` | ✅ | ❌ | ❌ | List of external storage directories for target `dirs`. |
 | `getExternalCacheDirectories()` | ✅ | ❌ | ❌ | List of external cache directories (`Context.getExternalCacheDirs`). |
-| `getDownloadsDirectory()` | ✅ | ✅ | ✅ | User/app downloads directory. |
+| `getDownloadsDirectory()` | ✅ | ❌ | ✅ | User/app downloads directory. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | Programmatically toggles the backup exclusion flag. |
 
 ---

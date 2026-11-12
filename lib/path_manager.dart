@@ -248,9 +248,11 @@ abstract final class PathManager {
   /// Gets the downloads directory on the host device.
   ///
   /// - **Android**: Resolves the app's external downloads directory.
-  /// - **iOS & macOS**: Resolves the user's Downloads directory (`NSDownloadsDirectory`).
+  /// - **macOS**: Resolves the user's Downloads directory (`NSDownloadsDirectory`).
+  /// - **iOS**: Throws an [UnsupportedError] due to iOS platform sandboxing.
   ///
   /// Throws a [MissingPlatformDirectoryException] if the directory cannot be resolved.
+  /// Throws an [UnsupportedError] on iOS.
   ///
   /// ### Examples
   ///

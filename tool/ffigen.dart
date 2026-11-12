@@ -1,53 +1,56 @@
 import 'dart:io';
 
-import 'package:ffigen/ffigen.dart' as fg;
+import 'package:ffigen/ffigen.dart';
 import 'package:logging/logging.dart';
 
-void main(List<String> args) {
+const _allowedNSFileManagerMembers = {
+  'temporaryDirectory',
+  'defaultManager',
+  'createDirectoryAtURL:withIntermediateDirectories:attributes:error:',
+  'URLForDirectory:inDomain:appropriateForURL:create:error:',
+};
+
+void main() async {
   final pkgRoot = Platform.script.resolve('../');
-  final logger = Logger.root;
 
-  logger.onRecord
-      .map((r) => '${r.level.name} ${r.message}')
-      .listen(stdout.writeln);
+  Logger.root.level = Level.INFO;
+  Logger.root.onRecord.listen((r) {
+    stdout.writeln('${r.level.name} ${r.message}');
+  });
 
-  fg.FfiGenerator(
-    output: fg.Output(
-      dartFile: pkgRoot.resolve('lib/bindings/foundation/bindings.g.dart'),
-      objectiveCFile: pkgRoot.resolve('lib/bindings/foundation/bindings.m'),
-      style: const fg.DynamicLibraryBindings(
-        wrapperName: 'FoundationFFI',
-        wrapperDocComment: 'Bindings for NSFileManager & URLResolve.',
-      ),
-    ),
-    headers: fg.Headers(
-      entryPoints: <Uri>[
-        Uri.file(
-          '${fg.macSdkPath}/System/Library/Frameworks/Foundation.framework/Headers/NSFileManager.h',
-        ),
-        Uri.file(
-          '${fg.macSdkPath}/System/Library/Frameworks/Foundation.framework/Headers/NSURL.h',
+  final generator = FfiGenerator(
+    objectiveC: const ObjectiveC(),
+    input: Input(
+      entryPoints: [
+        macSdkUri.resolve(
+          'System/Library/Frameworks/Foundation.framework/Headers/NSFileManager.h',
         ),
       ],
     ),
-    objectiveC: fg.ObjectiveC(
-      interfaces: fg.Interfaces(
-        include: (decl) => <String>{
-          'NSFileManager',
-        }.contains(decl.originalName),
-        includeMember: (decl, member) => switch (decl.originalName) {
-          'NSFileManager' => <String>{
-            'temporaryDirectory',
-            'defaultManager',
-            'createDirectoryAtURL:withIntermediateDirectories:attributes:error:',
-            'URLForDirectory:inDomain:appropriateForURL:create:error:',
-          }.contains(member),
-          _ => false,
+    visitors: [
+      Visitor(
+        objCInterface: (node) {
+          node.isIncluded = node.name == 'NSFileManager';
+        },
+        objCMethod: (node) {
+          final parent = node.parent;
+          if (parent is ObjCInterface && parent.name == 'NSFileManager') {
+            node.isIncluded = _allowedNSFileManagerMembers.contains(
+              node.selector,
+            );
+          }
+        },
+        enumClass: (node) {
+          node.silenceWarning = true;
         },
       ),
+    ],
+    output: Output(
+      dart: DartOutput(
+        path: pkgRoot.resolve('lib/bindings/foundation.g.dart'),
+      ),
     ),
-    functions: fg.Functions.includeSet(<String>{
-      'NSSearchPathForDirectoriesInDomains',
-    }),
-  ).generate(logger: logger);
+  );
+
+  await generator.generate(logger: Logger.root);
 }

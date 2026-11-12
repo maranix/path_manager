@@ -7,23 +7,16 @@ import 'package:objective_c/objective_c.dart' as objc;
 import './exceptions.dart';
 import './platform_path_manager.dart';
 import './storage_directory.dart';
-import '../bindings/foundation/bindings.g.dart';
+import '../bindings/foundation.g.dart';
 
 /// The iOS/macOS implementation of [PlatformPathManager] using Apple Foundation APIs via FFI.
 ///
 /// This class handles directory path resolutions by communicating with the
 /// macOS/iOS platform APIs using Objective-C FFI bindings.
-class FoundationPathManager extends PlatformPathManager {
+class FoundationPathManager() extends PlatformPathManager {
   /// Registers the iOS/macOS implementation of [PlatformPathManager].
   static void registerWith() {
     PlatformPathManager.instance = FoundationPathManager();
-  }
-
-  /// Creates a new [FoundationPathManager] and registers selectors.
-  FoundationPathManager() {
-    // Foundation is already loaded in the host process on Apple platforms.
-    // Instantiate FoundationFFI to register classes and selectors.
-    FoundationFFI(ffi.DynamicLibrary.process());
   }
 
   @override

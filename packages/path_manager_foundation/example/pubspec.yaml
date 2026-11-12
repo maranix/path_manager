@@ -1,0 +1,31 @@
+name: path_manager_foundation_example
+description: "Demonstrates how to use the path_manager_foundation plugin."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.11.0
+  path_manager_foundation:
+    path: ../
+  path_manager_platform_interface:
+    path: ../../path_manager_platform_interface
+
+dependency_overrides:
+  path_manager_platform_interface:
+    path: ../../path_manager_platform_interface
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -14,6 +14,7 @@ dependencies:
   flutter:
     sdk: flutter
   path_manager_platform_interface: ^0.9.0
+  ffi: ^2.2.0
   path: ^1.9.1
   xdg_directories: ^1.1.0
 

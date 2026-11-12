@@ -1,12 +1,9 @@
 /// Exception thrown by [PathManager] when a requested platform directory
 /// cannot be resolved or is not supported on the host platform.
-class MissingPlatformDirectoryException implements Exception {
+class const MissingPlatformDirectoryException(
   /// A message describing the error.
-  final String message;
-
-  /// Creates a new [MissingPlatformDirectoryException] with the given [message].
-  MissingPlatformDirectoryException(this.message);
-
+  final String message,
+) implements Exception {
   @override
   String toString() => 'MissingPlatformDirectoryException: $message';
 }
@@ -18,16 +15,13 @@ class MissingPlatformDirectoryException implements Exception {
 /// This conflict typically occurs if a user manually creates a file or
 /// directory named `__no_backup__` in the application support directory
 /// without setting the appropriate backup exclusion flags.
-class BackupExclusionConflictException implements Exception {
+class const BackupExclusionConflictException(
   /// The absolute path to the directory that caused the conflict.
-  final String path;
+  final String path,
 
   /// A detailed message explaining the conflict and remediation steps.
-  final String message;
-
-  /// Creates a new [BackupExclusionConflictException] with the given [path] and [message].
-  BackupExclusionConflictException(this.path, this.message);
-
+  final String message,
+) implements Exception {
   @override
   String toString() =>
       'BackupExclusionConflictException: $message (path: $path)';

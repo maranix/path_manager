@@ -1,5 +1,8 @@
 /// Categories for public or app-specific external storage subdirectories.
-enum StorageDirectory {
+enum StorageDirectory(
+  /// The corresponding Android `android.os.Environment` directory name string.
+  final String dirName,
+) {
   /// Directory for user music files (e.g. `Music`).
   music('Music'),
 
@@ -28,10 +31,5 @@ enum StorageDirectory {
   dcim('DCIM'),
 
   /// Directory for user documents (e.g. `Documents`).
-  documents('Documents');
-
-  const StorageDirectory(this.dirName);
-
-  /// The corresponding Android `android.os.Environment` directory name string.
-  final String dirName;
+  documents('Documents'),
 }

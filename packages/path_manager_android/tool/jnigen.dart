@@ -3,6 +3,15 @@ import 'dart:io';
 import 'package:jnigen/jnigen.dart';
 import 'package:logging/logging.dart';
 
+const _allowedMethods = {
+  'getCacheDir',
+  'getFilesDir',
+  'getExternalFilesDir',
+  'getExternalFilesDirs',
+  'getExternalCacheDirs',
+  'getAbsolutePath',
+};
+
 void main() async {
   final pkgRoot = Platform.script.resolve('../');
 
@@ -13,6 +22,18 @@ void main() async {
   });
 
   final generator = JniGenerator(
+    visitors: [
+      Visitor(
+        method: (node) {
+          if (!_allowedMethods.contains(node.originalName)) {
+            node.isIncluded = false;
+          }
+        },
+        field: (node) {
+          node.isIncluded = false;
+        },
+      ),
+    ],
     input: Input(
       classes: [
         'android.content.Context',

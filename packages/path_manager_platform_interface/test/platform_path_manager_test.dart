@@ -37,6 +37,53 @@ class ImplementsPlatformPathManager extends MockPlatformInterfaceMixin
   Future<String?> getDownloadsPath() async => '/downloads';
 
   @override
+  String? getTemporaryPathSync() => '/temp';
+
+  @override
+  String? getApplicationSupportPathSync() => '/support';
+
+  @override
+  String? getDocumentsPathSync() => '/docs';
+
+  @override
+  String? getApplicationCachePathSync() => '/cache';
+
+  @override
+  String? getDownloadsPathSync() => '/downloads';
+
+  @override
+  String? getDesktopPathSync() => '/desktop';
+
+  @override
+  String? getPicturesPathSync() => '/pictures';
+
+  @override
+  String? getMusicPathSync() => '/music';
+
+  @override
+  String? getVideosPathSync() => '/videos';
+
+  @override
+  Future<String?> getDesktopPath() async => '/desktop';
+
+  @override
+  Future<String?> getPicturesPath() async => '/pictures';
+
+  @override
+  Future<String?> getMusicPath() async => '/music';
+
+  @override
+  Future<String?> getVideosPath() async => '/videos';
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) =>
+      const DiskSpace(freeBytes: 100, totalBytes: 200);
+
+  @override
+  Future<DiskSpace?> getDiskSpace({String? path}) async =>
+      const DiskSpace(freeBytes: 100, totalBytes: 200);
+
+  @override
   Future<void> setApplicationPathIsExcludedFromBackup(
     String path,
     bool exclude,
@@ -75,6 +122,51 @@ class BadImplementationWithFakeToken extends PlatformInterface
 
   @override
   Future<String?> getDownloadsPath() async => null;
+
+  @override
+  String? getTemporaryPathSync() => null;
+
+  @override
+  String? getApplicationSupportPathSync() => null;
+
+  @override
+  String? getDocumentsPathSync() => null;
+
+  @override
+  String? getApplicationCachePathSync() => null;
+
+  @override
+  String? getDownloadsPathSync() => null;
+
+  @override
+  String? getDesktopPathSync() => null;
+
+  @override
+  String? getPicturesPathSync() => null;
+
+  @override
+  String? getMusicPathSync() => null;
+
+  @override
+  String? getVideosPathSync() => null;
+
+  @override
+  Future<String?> getDesktopPath() async => null;
+
+  @override
+  Future<String?> getPicturesPath() async => null;
+
+  @override
+  Future<String?> getMusicPath() async => null;
+
+  @override
+  Future<String?> getVideosPath() async => null;
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) => null;
+
+  @override
+  Future<DiskSpace?> getDiskSpace({String? path}) async => null;
 
   @override
   Future<void> setApplicationPathIsExcludedFromBackup(
@@ -130,6 +222,66 @@ void main() {
         throwsA(isA<UnimplementedError>()),
       );
       expect(
+        () => manager.getTemporaryPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getApplicationSupportPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getDocumentsPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getApplicationCachePathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getDownloadsPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getDesktopPath(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getPicturesPath(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getMusicPath(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getVideosPath(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getDesktopPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getPicturesPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getMusicPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getVideosPathSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getDiskSpace(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
+        () => manager.getDiskSpaceSync(),
+        throwsA(isA<UnimplementedError>()),
+      );
+      expect(
         () => manager.setApplicationPathIsExcludedFromBackup('/test', true),
         throwsA(isA<UnimplementedError>()),
       );
@@ -154,6 +306,33 @@ void main() {
       expect(
         () => PlatformPathManager.instance = bad,
         throwsA(isA<AssertionError>()),
+      );
+    });
+  });
+
+  group('DiskSpace', () {
+    test('exposes free, total, and used bytes', () {
+      const space = DiskSpace(freeBytes: 250, totalBytes: 1000);
+      expect(space.freeBytes, 250);
+      expect(space.totalBytes, 1000);
+      expect(space.usedBytes, 750);
+    });
+
+    test('supports value equality and hashing', () {
+      const a = DiskSpace(freeBytes: 250, totalBytes: 1000);
+      const b = DiskSpace(freeBytes: 250, totalBytes: 1000);
+      const c = DiskSpace(freeBytes: 300, totalBytes: 1000);
+
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+      expect(a, isNot(equals(c)));
+    });
+
+    test('toString includes free and total bytes', () {
+      const space = DiskSpace(freeBytes: 250, totalBytes: 1000);
+      expect(
+        space.toString(),
+        'DiskSpace(freeBytes: 250, totalBytes: 1000)',
       );
     });
   });

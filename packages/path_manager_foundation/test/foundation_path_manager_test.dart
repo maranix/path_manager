@@ -70,6 +70,92 @@ void main() {
       }
     });
 
+    test('synchronous getters mirror asynchronous resolution', () {
+      final manager = FoundationPathManager();
+
+      expect(manager.getTemporaryPathSync(), isNotNull);
+      expect(manager.getApplicationSupportPathSync(), isNotNull);
+      expect(manager.getDocumentsPathSync(), isNotNull);
+      expect(manager.getApplicationCachePathSync(), isNotNull);
+      if (Platform.isMacOS) {
+        expect(manager.getDownloadsPathSync(), isNotNull);
+      }
+    });
+
+    test('synchronous getters return existing directories', () {
+      final manager = FoundationPathManager();
+
+      for (final path in [
+        manager.getTemporaryPathSync(),
+        manager.getDocumentsPathSync(),
+        manager.getApplicationCachePathSync(),
+      ]) {
+        expect(path, isNotNull);
+        expect(Directory(path!).existsSync(), isTrue);
+      }
+    });
+
+    test('media directory getters resolve on macOS', () {
+      if (!Platform.isMacOS) return;
+      final manager = FoundationPathManager();
+
+      expect(manager.getDesktopPathSync(), isNotEmpty);
+      expect(manager.getPicturesPathSync(), isNotEmpty);
+      expect(manager.getMusicPathSync(), isNotEmpty);
+      expect(manager.getVideosPathSync(), isNotEmpty);
+    });
+
+    test('media directory getters throw UnsupportedError on iOS', () {
+      if (!Platform.isIOS) return;
+      final manager = FoundationPathManager();
+
+      expect(
+        () => manager.getDesktopPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => manager.getPicturesPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => manager.getMusicPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => manager.getVideosPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
+    test('getDiskSpaceSync reports volume capacity in bytes', () {
+      final manager = FoundationPathManager();
+      final space = manager.getDiskSpaceSync();
+
+      expect(space, isNotNull);
+      expect(space!.totalBytes, greaterThan(0));
+      expect(space.freeBytes, greaterThanOrEqualTo(0));
+      expect(space.freeBytes, lessThanOrEqualTo(space.totalBytes));
+      expect(space.usedBytes, space.totalBytes - space.freeBytes);
+    });
+
+    test('getDiskSpaceSync accepts an explicit path', () {
+      final manager = FoundationPathManager();
+      final tempPath = manager.getTemporaryPathSync();
+
+      expect(tempPath, isNotNull);
+      final space = manager.getDiskSpaceSync(path: tempPath);
+      expect(space, isNotNull);
+      expect(space!.totalBytes, greaterThan(0));
+    });
+
+    test('getDiskSpaceSync returns null for an inaccessible path', () {
+      final manager = FoundationPathManager();
+      expect(
+        manager.getDiskSpaceSync(path: '/non_existent_path_xyz'),
+        isNull,
+      );
+    });
+
     test(
       'external storage methods throw UnsupportedError on Apple platforms',
       () async {

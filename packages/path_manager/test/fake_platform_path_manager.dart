@@ -14,6 +14,13 @@ class FakePlatformPathManager extends PlatformPathManager
   List<String>? externalStoragePaths;
   List<String>? externalCachePaths;
   String? downloadsPath;
+  String? desktopPath;
+  String? picturesPath;
+  String? musicPath;
+  String? videosPath;
+
+  DiskSpace? diskSpace;
+  String? lastDiskSpacePath;
 
   String? lastExcludedPath;
   bool? lastExcludedValue;
@@ -23,13 +30,25 @@ class FakePlatformPathManager extends PlatformPathManager
   Future<String?> getTemporaryPath() async => temporaryPath;
 
   @override
+  String? getTemporaryPathSync() => temporaryPath;
+
+  @override
   Future<String?> getApplicationSupportPath() async => applicationSupportPath;
+
+  @override
+  String? getApplicationSupportPathSync() => applicationSupportPath;
 
   @override
   Future<String?> getDocumentsPath() async => documentsPath;
 
   @override
+  String? getDocumentsPathSync() => documentsPath;
+
+  @override
   Future<String?> getApplicationCachePath() async => applicationCachePath;
+
+  @override
+  String? getApplicationCachePathSync() => applicationCachePath;
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async =>
@@ -49,6 +68,45 @@ class FakePlatformPathManager extends PlatformPathManager
 
   @override
   Future<String?> getDownloadsPath() async => downloadsPath;
+
+  @override
+  String? getDownloadsPathSync() => downloadsPath;
+
+  @override
+  Future<String?> getDesktopPath() async => desktopPath;
+
+  @override
+  String? getDesktopPathSync() => desktopPath;
+
+  @override
+  Future<String?> getPicturesPath() async => picturesPath;
+
+  @override
+  String? getPicturesPathSync() => picturesPath;
+
+  @override
+  Future<String?> getMusicPath() async => musicPath;
+
+  @override
+  String? getMusicPathSync() => musicPath;
+
+  @override
+  Future<String?> getVideosPath() async => videosPath;
+
+  @override
+  String? getVideosPathSync() => videosPath;
+
+  @override
+  Future<DiskSpace?> getDiskSpace({String? path}) async {
+    lastDiskSpacePath = path;
+    return diskSpace;
+  }
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) {
+    lastDiskSpacePath = path;
+    return diskSpace;
+  }
 
   @override
   Future<void> setApplicationPathIsExcludedFromBackup(

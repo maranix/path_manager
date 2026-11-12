@@ -8,6 +8,7 @@ const _allowedNSFileManagerMembers = {
   'defaultManager',
   'createDirectoryAtURL:withIntermediateDirectories:attributes:error:',
   'URLForDirectory:inDomain:appropriateForURL:create:error:',
+  'attributesOfFileSystemForPath:error:',
 };
 
 void main() async {

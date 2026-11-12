@@ -1,7 +1,7 @@
 name: path_manager_platform_interface
 resolution: workspace
 description: A common platform interface for the path_manager plugin.
-version: 0.9.0
+version: 1.0.0
 homepage: https://github.com/maranix/path_manager
 repository: https://github.com/maranix/path_manager/tree/main/packages/path_manager_platform_interface
 issue_tracker: https://github.com/maranix/path_manager/issues

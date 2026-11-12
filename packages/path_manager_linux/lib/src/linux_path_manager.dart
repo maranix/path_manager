@@ -1,8 +1,19 @@
+import 'dart:ffi' as ffi;
 import 'dart:io';
 
+import 'package:ffi/ffi.dart' as pkg_ffi;
 import 'package:path/path.dart' as p;
 import 'package:path_manager_platform_interface/path_manager_platform_interface.dart';
 import 'package:xdg_directories/xdg_directories.dart' as xdg;
+
+/// Signature for resolving the capacity of the volume containing a path.
+typedef DiskSpaceResolver = DiskSpace? Function(String path);
+
+/// Signature for the POSIX `statvfs` function.
+typedef _StatvfsFn = int Function(
+  ffi.Pointer<ffi.Uint8> path,
+  ffi.Pointer<ffi.Uint8> buffer,
+);
 
 /// The Linux implementation of [PlatformPathManager] adhering to the XDG Base Directory specification.
 class LinuxPathManager extends PlatformPathManager {
@@ -12,7 +23,9 @@ class LinuxPathManager extends PlatformPathManager {
     Directory? Function(String name)? getUserDirectory,
     this.dataHome,
     this.cacheHome,
-  }) : _getUserDir = getUserDirectory ?? xdg.getUserDirectory;
+    DiskSpaceResolver? diskSpaceResolver,
+  }) : _getUserDir = getUserDirectory ?? xdg.getUserDirectory,
+       _diskSpaceResolver = diskSpaceResolver ?? _defaultGetDiskSpace;
 
   /// Registers the Linux implementation of [PlatformPathManager].
   static void registerWith() {
@@ -23,6 +36,7 @@ class LinuxPathManager extends PlatformPathManager {
   final Map<String, String>? environment;
 
   final Directory? Function(String name) _getUserDir;
+  final DiskSpaceResolver _diskSpaceResolver;
 
   /// Optional data home directory override for testing.
   final Directory? dataHome;
@@ -32,8 +46,63 @@ class LinuxPathManager extends PlatformPathManager {
 
   Map<String, String> get _env => environment ?? Platform.environment;
 
+  static final _StatvfsFn? _statvfs = _lookupStatvfs();
+
+  static _StatvfsFn? _lookupStatvfs() {
+    if (!Platform.isLinux) return null;
+    try {
+      return ffi.DynamicLibrary.open('libc.so.6').lookupFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>,
+        ),
+        _StatvfsFn
+      >('statvfs');
+    } catch (_) {
+      try {
+        return ffi.DynamicLibrary.process().lookupFunction<
+          ffi.Int32 Function(
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Pointer<ffi.Uint8>,
+          ),
+          _StatvfsFn
+        >('statvfs');
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+
+  static DiskSpace? _defaultGetDiskSpace(String path) {
+    final statvfs = _statvfs;
+    if (statvfs == null) return null;
+
+    final pathPtr = path.toNativeUtf8();
+    // `struct statvfs` is 112 bytes on 64-bit Linux (11 unsigned long fields
+    // plus trailing type/spare fields). Allocate extra headroom so newer libc
+    // versions that append fields cannot overflow the buffer.
+    final buffer = pkg_ffi.calloc<ffi.Uint8>(256);
+    try {
+      if (statvfs(pathPtr.cast(), buffer) != 0) return null;
+
+      // The leading fields are stable 64-bit `unsigned long` values:
+      // [0] f_bsize, [1] f_frsize, [2] f_blocks, [3] f_bfree, [4] f_bavail.
+      final words = buffer.cast<ffi.Uint64>();
+      final blockSize = words[1] != 0 ? words[1] : words[0];
+      return DiskSpace(
+        freeBytes: words[4] * blockSize,
+        totalBytes: words[2] * blockSize,
+      );
+    } catch (_) {
+      return null;
+    } finally {
+      pkg_ffi.calloc.free(buffer);
+      pkg_ffi.malloc.free(pathPtr);
+    }
+  }
+
   @override
-  Future<String?> getTemporaryPath() async {
+  String? getTemporaryPathSync() {
     final tmp = _env['TMPDIR'];
     if (tmp != null && tmp.isNotEmpty) {
       return tmp;
@@ -42,44 +111,74 @@ class LinuxPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getApplicationSupportPath() async {
+  String? getApplicationSupportPathSync() {
     return dataHome?.path ?? xdg.dataHome.path;
   }
 
   @override
-  Future<String?> getApplicationCachePath() async {
+  String? getApplicationCachePathSync() {
     return cacheHome?.path ?? xdg.cacheHome.path;
   }
 
   @override
-  Future<String?> getDocumentsPath() async {
-    final xdgDoc = _getUserDir('DOCUMENTS');
-    if (xdgDoc != null) {
-      return xdgDoc.path;
-    }
-    final home = _env['HOME'];
-    if (home != null && home.isNotEmpty) {
-      return p.join(home, 'Documents');
-    }
-    return null;
-  }
+  String? getDocumentsPathSync() => _getUserDirPath('DOCUMENTS', 'Documents');
 
   @override
-  Future<String?> getDownloadsPath() async {
-    final xdgDownload = _getUserDir('DOWNLOAD');
-    if (xdgDownload != null) {
-      return xdgDownload.path;
-    }
+  String? getDownloadsPathSync() => _getUserDirPath('DOWNLOAD', 'Downloads');
+
+  @override
+  String? getDesktopPathSync() => _getUserDirPath('DESKTOP', 'Desktop');
+
+  @override
+  String? getPicturesPathSync() => _getUserDirPath('PICTURES', 'Pictures');
+
+  @override
+  String? getMusicPathSync() => _getUserDirPath('MUSIC', 'Music');
+
+  @override
+  String? getVideosPathSync() => _getUserDirPath('VIDEOS', 'Videos');
+
+  @override
+  Future<String?> getTemporaryPath() async => getTemporaryPathSync();
+
+  @override
+  Future<String?> getApplicationSupportPath() async =>
+      getApplicationSupportPathSync();
+
+  @override
+  Future<String?> getApplicationCachePath() async =>
+      getApplicationCachePathSync();
+
+  @override
+  Future<String?> getDocumentsPath() async => getDocumentsPathSync();
+
+  @override
+  Future<String?> getDownloadsPath() async => getDownloadsPathSync();
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) {
+    final target =
+        path ??
+        getApplicationSupportPathSync() ??
+        getApplicationCachePathSync();
+    if (target == null) return null;
+    return _diskSpaceResolver(target);
+  }
+
+  String? _getUserDirPath(String xdgName, String fallbackName) {
+    final xdgDir = _getUserDir(xdgName);
+    if (xdgDir != null) return xdgDir.path;
+
     final home = _env['HOME'];
     if (home != null && home.isNotEmpty) {
-      return p.join(home, 'Downloads');
+      return p.join(home, fallbackName);
     }
     return null;
   }
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async {
-    final supportPath = await getApplicationSupportPath();
+    final supportPath = getApplicationSupportPathSync();
     if (supportPath == null) return null;
 
     final noBackupPath = p.join(supportPath, '__no_backup__');

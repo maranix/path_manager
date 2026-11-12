@@ -1,7 +1,7 @@
 name: path_manager_android
 resolution: workspace
 description: Android implementation of the path_manager plugin using JNI via FFI.
-version: 0.9.0
+version: 1.0.0
 homepage: https://github.com/maranix/path_manager
 repository: https://github.com/maranix/path_manager/tree/main/packages/path_manager_android
 issue_tracker: https://github.com/maranix/path_manager/issues
@@ -13,7 +13,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_manager_platform_interface: ^0.9.0
+  path_manager_platform_interface: ^1.0.0
   jni: ^1.1.2
   jni_flutter: ^1.0.4+1
 

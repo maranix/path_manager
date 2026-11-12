@@ -22,6 +22,14 @@ class _MyAppState extends State<MyApp> {
   Directory? _noBackupDirectory;
   Directory? _downloadsDirectory;
   String _externalStorageStatus = 'Loading...';
+  String _desktopStatus = 'Loading...';
+  String _picturesStatus = 'Loading...';
+  String _musicStatus = 'Loading...';
+  String _videosStatus = 'Loading...';
+  String _diskSpaceStatus = 'Loading...';
+  String _cacheSizeStatus = 'Loading...';
+  String _cacheActionStatus = 'Idle';
+  String? _syncTemporaryPath;
   String _exclusionTestResult = 'Not tested';
   String? _error;
 
@@ -31,12 +39,34 @@ class _MyAppState extends State<MyApp> {
     _loadPaths();
   }
 
+  Future<String> _resolveMediaPath(Future<Directory> Function() getter) async {
+    try {
+      return (await getter()).path;
+    } on UnsupportedError {
+      return 'Unsupported on this platform';
+    } catch (e) {
+      return 'Error: $e';
+    }
+  }
+
+  Future<String> _resolveDiskSpace() async {
+    try {
+      final space = await PathManager.getDiskSpace();
+      return '${PathManager.formatBytes(space.freeBytes)} free '
+          'of ${PathManager.formatBytes(space.totalBytes)}';
+    } on FileSystemException catch (e) {
+      return 'Unavailable: ${e.message}';
+    }
+  }
+
   Future<void> _loadPaths() async {
     try {
       final temp = await PathManager.getTemporaryDirectory();
       final appSupport = await PathManager.getApplicationSupportDirectory();
       final docs = await PathManager.getApplicationDocumentsDirectory();
       final cache = await PathManager.getApplicationCacheDirectory();
+      final syncTemp = PathManager.getTemporaryDirectorySync();
+      final cacheSize = await PathManager.getApplicationCacheSize();
       Directory? noBackup;
       Directory? downloads;
       String extStatus = 'Unsupported on this platform';
@@ -64,6 +94,14 @@ class _MyAppState extends State<MyApp> {
         extStatus = 'Error: $e';
       }
 
+      final desktop = await _resolveMediaPath(PathManager.getDesktopDirectory);
+      final pictures = await _resolveMediaPath(
+        PathManager.getPicturesDirectory,
+      );
+      final music = await _resolveMediaPath(PathManager.getMusicDirectory);
+      final videos = await _resolveMediaPath(PathManager.getVideosDirectory);
+      final diskSpace = await _resolveDiskSpace();
+
       setState(() {
         _temporaryDirectory = temp;
         _applicationSupportDirectory = appSupport;
@@ -72,10 +110,35 @@ class _MyAppState extends State<MyApp> {
         _noBackupDirectory = noBackup;
         _downloadsDirectory = downloads;
         _externalStorageStatus = extStatus;
+        _desktopStatus = desktop;
+        _picturesStatus = pictures;
+        _musicStatus = music;
+        _videosStatus = videos;
+        _diskSpaceStatus = diskSpace;
+        _cacheSizeStatus = PathManager.formatBytes(cacheSize);
+        _syncTemporaryPath = syncTemp.path;
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
+      });
+    }
+  }
+
+  Future<void> _clearCache() async {
+    setState(() {
+      _cacheActionStatus = 'Clearing...';
+    });
+    try {
+      await PathManager.clearApplicationCache();
+      final remaining = await PathManager.getApplicationCacheSize();
+      setState(() {
+        _cacheSizeStatus = PathManager.formatBytes(remaining);
+        _cacheActionStatus = 'Cache cleared.';
+      });
+    } catch (e) {
+      setState(() {
+        _cacheActionStatus = 'Failed: $e';
       });
     }
   }
@@ -155,6 +218,48 @@ class _MyAppState extends State<MyApp> {
                     _buildPathCard(
                       'External Storage Directory',
                       _externalStorageStatus,
+                    ),
+                    _buildPathCard('Desktop Directory', _desktopStatus),
+                    _buildPathCard('Pictures Directory', _picturesStatus),
+                    _buildPathCard('Music Directory', _musicStatus),
+                    _buildPathCard('Videos Directory', _videosStatus),
+                    _buildPathCard(
+                      'Synchronous Temporary Directory',
+                      _syncTemporaryPath,
+                    ),
+                    _buildPathCard('Disk Space', _diskSpaceStatus),
+                    const SizedBox(height: 16),
+                    Card(
+                      color: Colors.blueGrey.shade900,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Application Cache Utilities',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Cache size: $_cacheSizeStatus',
+                              style: const TextStyle(fontFamily: 'monospace'),
+                            ),
+                            Text(
+                              'Status: $_cacheActionStatus',
+                              style: const TextStyle(fontFamily: 'monospace'),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _clearCache,
+                              child: const Text('Clear Cache'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Card(

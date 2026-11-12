@@ -34,6 +34,20 @@ This plugin leverages direct native interop without MethodChannels:
 | `getExternalStorageDirectories(dirs)` | ✅ | ❌ | ❌ | ❌ | ❌ | List of external storage directories for target `dirs`. |
 | `getExternalCacheDirectories()` | ✅ | ❌ | ❌ | ❌ | ❌ | List of external cache directories (`Context.getExternalCacheDirs`). |
 | `getDownloadsDirectory()` | ✅ | ❌ | ✅ | ✅ | ✅ | User/app downloads directory. |
+| `getTemporaryDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous temporary directory. |
+| `getApplicationSupportDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous application support directory. |
+| `getApplicationDocumentsDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous documents directory. |
+| `getApplicationCacheDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous cache directory. |
+| `getDownloadsDirectorySync()` | ✅ | ❌ | ✅ | ✅ | ✅ | Synchronous downloads directory. |
+| `getDesktopDirectory()` / `getDesktopDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user desktop directory. |
+| `getPicturesDirectory()` / `getPicturesDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user pictures directory. |
+| `getMusicDirectory()` / `getMusicDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user music directory. |
+| `getVideosDirectory()` / `getVideosDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user videos directory. |
+| `getDiskSpace({path})` / `getDiskSpaceSync({path})` | ✅ | ✅ | ✅ | ✅ | ✅ | Free and total volume capacity in bytes for the volume containing `path`. |
+| `getApplicationCacheSize()` | ✅ | ✅ | ✅ | ✅ | ✅ | Recursive application cache size in bytes. |
+| `clearApplicationCache()` | ✅ | ✅ | ✅ | ✅ | ✅ | Deletes cache contents while preserving the cache directory. |
+| `getApplication*Subdirectory(subpath)` | ✅ | ✅ | ✅ | ✅ | ✅ | Creates a validated, namespaced subdirectory. |
+| `formatBytes(bytes)` | ✅ | ✅ | ✅ | ✅ | ✅ | Formats a byte count into a human-readable string. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | ❌ | ❌ | Programmatically toggles the backup exclusion flag. |
 
 ---
@@ -43,6 +57,10 @@ This plugin leverages direct native interop without MethodChannels:
 - **Direct interop**: Built completely with JNI and FFI interop—no MethodChannels.
 - **Tree shakeable**: Platform-specific code and dependencies are only compiled and included for their target platform.
 - **Desktop support**: Native Linux (XDG) and Windows (Win32 Known Folders) support.
+- **Synchronous access**: Resolve every standard directory synchronously for `main()`, dependency-injection setup, and database initialization.
+- **Desktop media directories**: Access the user's desktop, pictures, music, and videos directories on desktop platforms.
+- **Disk and cache insights**: Query volume capacity and measure or clear the application cache, with human-readable byte formatting.
+- **Safe subdirectories**: Create validated, namespaced subdirectories that cannot escape the application directory.
 - **Dedicated No-Backup Directories**: Provides a default folder named `__no_backup__` that is automatically marked for exclusion from platform backup systems where supported.
 - **Custom exclusions**: Mark any arbitrary file or folder on iOS/macOS to be skipped during iCloud/iTunes backups.
 
@@ -51,8 +69,8 @@ This plugin leverages direct native interop without MethodChannels:
 ## Federated Architecture
 
 `path_manager` is structured as a federated Flutter monorepo managed via Dart Pub Workspaces:
-- [`path_manager`](file:///Users/maranix/Developer/path_manager/packages/path_manager): App-facing facade package (v0.9.0).
-- [`path_manager_platform_interface`](file:///Users/maranix/Developer/path_manager/packages/path_manager_platform_interface): Common platform interface and models (v0.9.0).
+- [`path_manager`](file:///Users/maranix/Developer/path_manager/packages/path_manager): App-facing facade package (v1.0.0).
+- [`path_manager_platform_interface`](file:///Users/maranix/Developer/path_manager/packages/path_manager_platform_interface): Common platform interface and models (v1.0.0).
 - [`path_manager_android`](file:///Users/maranix/Developer/path_manager/packages/path_manager_android): Android implementation using JNI via FFI.
 - [`path_manager_foundation`](file:///Users/maranix/Developer/path_manager/packages/path_manager_foundation): iOS and macOS implementation using Foundation Objective-C FFI.
 - [`path_manager_linux`](file:///Users/maranix/Developer/path_manager/packages/path_manager_linux): Linux desktop implementation using XDG Base Directory specification.
@@ -66,7 +84,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  path_manager: ^0.9.0
+  path_manager: ^1.0.0
 ```
 
 Then run:
@@ -227,6 +245,85 @@ final List<Directory> mediaDirs = await PathManager.getExternalStorageDirectorie
 
 ---
 
+### 5. Synchronous Path Resolution
+
+Every standard directory has a synchronous counterpart for code that cannot await, such as `main()`, dependency-injection setup, and database initialization. Synchronous getters throw `MissingPlatformDirectoryException` when a directory cannot be resolved, or `UnsupportedError` when the platform does not provide the concept.
+
+```dart
+import 'package:path_manager/path_manager.dart';
+
+void main() {
+  final Directory support = PathManager.getApplicationSupportDirectorySync();
+  final Directory cache = PathManager.getApplicationCacheDirectorySync();
+  print('Database lives in: ${support.path}');
+  print('Cache lives in: ${cache.path}');
+}
+```
+
+---
+
+### 6. Desktop Media Directories
+
+Windows, macOS, and Linux expose the user's global desktop, pictures, music, and videos directories. Android and iOS throw `UnsupportedError` because they use sandboxed storage instead of global user directories.
+
+```dart
+final Directory pictures = await PathManager.getPicturesDirectory();
+final Directory videos = await PathManager.getVideosDirectory();
+final Directory desktop = PathManager.getDesktopDirectorySync();
+
+print('Pictures: ${pictures.path}');
+print('Videos: ${videos.path}');
+print('Desktop: ${desktop.path}');
+```
+
+---
+
+### 7. Volume Capacity and Cache Utilities
+
+`getDiskSpace()` and `getDiskSpaceSync()` report the **free and total capacity of the volume that contains `path`, in bytes**. The `path` argument selects the volume; it does not measure the size of the file or directory at that path. When `path` is omitted, the application support directory is used. Only app-accessible paths are supported.
+
+```dart
+import 'dart:io';
+import 'package:path_manager/path_manager.dart';
+
+final DiskSpace space = await PathManager.getDiskSpace();
+print('Free: ${PathManager.formatBytes(space.freeBytes)}');
+print('Total: ${PathManager.formatBytes(space.totalBytes)}');
+
+final int cacheBytes = await PathManager.getApplicationCacheSize();
+print('Cache size: ${PathManager.formatBytes(cacheBytes)}');
+
+// Delete cache contents while keeping the cache directory itself.
+await PathManager.clearApplicationCache();
+
+try {
+  final DiskSpace syncSpace = PathManager.getDiskSpaceSync(path: Directory.current.path);
+  print('Current volume: ${syncSpace.usedBytes} bytes used');
+} on FileSystemException catch (e) {
+  print('Disk space unavailable: ${e.message}');
+}
+```
+
+`getApplicationCacheSize()` returns the recursive size of the application cache directory **in bytes**, skipping symbolic links and files that disappear while walking. `formatBytes()` renders byte counts with 1024-based units (`1536` becomes `1.5 KB`).
+
+---
+
+### 8. Safe Namespaced Subdirectories
+
+The subdirectory helpers create a directory inside application storage and reject input that could escape it. Both `/` and `\` are accepted as separators and normalized to the host platform. Absolute paths, drive letters, UNC paths, `..` segments, NUL characters, and Windows reserved device names are rejected with an `ArgumentError`.
+
+```dart
+final Directory database = await PathManager.getApplicationSupportSubdirectory('database/drift');
+final Directory images = await PathManager.getApplicationCacheSubdirectory('images');
+final Directory projects = await PathManager.getApplicationDocumentsSubdirectory('projects');
+
+print('Database: ${database.path}');
+print('Image cache: ${images.path}');
+print('Projects: ${projects.path}');
+```
+
+---
+
 ### Testing & Mocking
 
 Since `path_manager` resolves directories using platform-specific APIs, writing unit tests for code that uses `PathManager` can be done by providing a mock/fake implementation of `PlatformPathManager`.
@@ -238,9 +335,11 @@ Remember to restore the original instance or tear it down.
 
 ```dart
 import 'package:path_manager/path_manager.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:test/test.dart';
 
-class FakePlatformPathManager implements PlatformPathManager {
+class FakePlatformPathManager extends PlatformPathManager
+    with MockPlatformInterfaceMixin {
   @override
   Future<String?> getTemporaryPath() async => '/fake/temp';
 

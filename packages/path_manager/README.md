@@ -34,6 +34,20 @@ This plugin leverages direct native interop without MethodChannels:
 | `getExternalStorageDirectories(dirs)` | ✅ | ❌ | ❌ | ❌ | ❌ | List of external storage directories for target `dirs`. |
 | `getExternalCacheDirectories()` | ✅ | ❌ | ❌ | ❌ | ❌ | List of external cache directories (`Context.getExternalCacheDirs`). |
 | `getDownloadsDirectory()` | ✅ | ❌ | ✅ | ✅ | ✅ | User/app downloads directory. |
+| `getTemporaryDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous temporary directory. |
+| `getApplicationSupportDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous application support directory. |
+| `getApplicationDocumentsDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous documents directory. |
+| `getApplicationCacheDirectorySync()` | ✅ | ✅ | ✅ | ✅ | ✅ | Synchronous cache directory. |
+| `getDownloadsDirectorySync()` | ✅ | ❌ | ✅ | ✅ | ✅ | Synchronous downloads directory. |
+| `getDesktopDirectory()` / `getDesktopDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user desktop directory. |
+| `getPicturesDirectory()` / `getPicturesDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user pictures directory. |
+| `getMusicDirectory()` / `getMusicDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user music directory. |
+| `getVideosDirectory()` / `getVideosDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user videos directory. |
+| `getDiskSpace({path})` / `getDiskSpaceSync({path})` | ✅ | ✅ | ✅ | ✅ | ✅ | Free and total volume capacity in bytes for the volume containing `path`. |
+| `getApplicationCacheSize()` | ✅ | ✅ | ✅ | ✅ | ✅ | Recursive application cache size in bytes. |
+| `clearApplicationCache()` | ✅ | ✅ | ✅ | ✅ | ✅ | Deletes cache contents while preserving the cache directory. |
+| `getApplication*Subdirectory(subpath)` | ✅ | ✅ | ✅ | ✅ | ✅ | Creates a validated, namespaced subdirectory. |
+| `formatBytes(bytes)` | ✅ | ✅ | ✅ | ✅ | ✅ | Formats a byte count into a human-readable string. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | ❌ | ❌ | Programmatically toggles the backup exclusion flag. |
 
 ---
@@ -44,7 +58,7 @@ Add `path_manager` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  path_manager: ^0.9.0
+  path_manager: ^1.0.0
 ```
 
 Then run:
@@ -84,6 +98,47 @@ print('Downloads directory: ${downloadsDir.path}');
 // Retrieve the dedicated directory excluded from backups
 final Directory noBackupDir = await PathManager.getApplicationNoBackupDirectory();
 print('No-backup directory: ${noBackupDir.path}');
+```
+
+### Synchronous Access
+
+Use the synchronous getters in `main()`, dependency-injection setup, or database initialization:
+
+```dart
+final Directory supportDir = PathManager.getApplicationSupportDirectorySync();
+final Directory cacheDir = PathManager.getApplicationCacheDirectorySync();
+```
+
+### Desktop Media Directories
+
+Windows, macOS, and Linux expose global user directories. Android and iOS throw `UnsupportedError`.
+
+```dart
+final Directory pictures = await PathManager.getPicturesDirectory();
+final Directory videos = await PathManager.getVideosDirectory();
+```
+
+### Disk Space and Cache Utilities
+
+`getDiskSpace()` reports the free and total capacity of the **volume containing a path**, in bytes. `path` selects the volume; it does not measure the entity at that path.
+
+```dart
+final DiskSpace space = await PathManager.getDiskSpace();
+print('${PathManager.formatBytes(space.freeBytes)} free of '
+    '${PathManager.formatBytes(space.totalBytes)}');
+
+final int cacheBytes = await PathManager.getApplicationCacheSize();
+print('Cache: ${PathManager.formatBytes(cacheBytes)}');
+await PathManager.clearApplicationCache();
+```
+
+### Safe Subdirectories
+
+Subdirectory helpers create validated, namespaced directories. Absolute paths, drive letters, UNC paths, `..` segments, NUL characters, and Windows reserved names are rejected.
+
+```dart
+final Directory database =
+    await PathManager.getApplicationSupportSubdirectory('database/drift');
 ```
 
 ---

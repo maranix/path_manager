@@ -1,7 +1,7 @@
 name: path_manager_linux
 resolution: workspace
 description: Linux implementation of the path_manager plugin adhering to the XDG Base Directory specification.
-version: 0.9.0
+version: 1.0.0
 homepage: https://github.com/maranix/path_manager
 repository: https://github.com/maranix/path_manager/tree/main/packages/path_manager_linux
 issue_tracker: https://github.com/maranix/path_manager/issues
@@ -13,7 +13,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_manager_platform_interface: ^0.9.0
+  path_manager_platform_interface: ^1.0.0
+  ffi: ^2.2.0
   path: ^1.9.1
   xdg_directories: ^1.1.0
 

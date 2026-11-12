@@ -1,7 +1,7 @@
 name: path_manager_foundation
 resolution: workspace
 description: iOS and macOS implementation of the path_manager plugin using Foundation Objective-C FFI.
-version: 0.9.0
+version: 1.0.0
 homepage: https://github.com/maranix/path_manager
 repository: https://github.com/maranix/path_manager/tree/main/packages/path_manager_foundation
 issue_tracker: https://github.com/maranix/path_manager/issues
@@ -13,7 +13,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_manager_platform_interface: ^0.9.0
+  path_manager_platform_interface: ^1.0.0
   objective_c: ^9.6.4
   ffi: ^2.2.0
 

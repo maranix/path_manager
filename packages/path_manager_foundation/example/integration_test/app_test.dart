@@ -15,6 +15,28 @@ void main() {
     if (Platform.isMacOS || Platform.isIOS) {
       final temp = await PlatformPathManager.instance.getTemporaryPath();
       expect(temp, isNotNull);
+      expect(PlatformPathManager.instance.getTemporaryPathSync(), temp);
+
+      final support = await PlatformPathManager.instance
+          .getApplicationSupportPath();
+      expect(
+        PlatformPathManager.instance.getApplicationSupportPathSync(),
+        support,
+      );
+
+      final space = PlatformPathManager.instance.getDiskSpaceSync();
+      expect(space, isNotNull);
+      expect(space!.totalBytes, greaterThan(0));
+
+      if (Platform.isMacOS) {
+        expect(PlatformPathManager.instance.getDesktopPathSync(), isNotEmpty);
+        expect(PlatformPathManager.instance.getVideosPathSync(), isNotEmpty);
+      } else {
+        expect(
+          () => PlatformPathManager.instance.getDesktopPathSync(),
+          throwsA(isA<UnsupportedError>()),
+        );
+      }
     }
   });
 }

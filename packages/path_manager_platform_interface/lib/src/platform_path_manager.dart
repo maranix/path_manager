@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'disk_space.dart';
 import 'storage_directory.dart';
 
 /// The platform-specific interface contract for resolving directory paths.
@@ -108,6 +109,137 @@ abstract class PlatformPathManager extends PlatformInterface {
   Future<String?> getDownloadsPath() {
     throw UnimplementedError('getDownloadsPath() has not been implemented.');
   }
+
+  /// Gets the absolute path to the temporary directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  String? getTemporaryPathSync() {
+    throw UnimplementedError(
+      'getTemporaryPathSync() has not been implemented.',
+    );
+  }
+
+  /// Gets the absolute path to the application support directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  String? getApplicationSupportPathSync() {
+    throw UnimplementedError(
+      'getApplicationSupportPathSync() has not been implemented.',
+    );
+  }
+
+  /// Gets the absolute path to the user documents directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  String? getDocumentsPathSync() {
+    throw UnimplementedError(
+      'getDocumentsPathSync() has not been implemented.',
+    );
+  }
+
+  /// Gets the absolute path to the application cache directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  String? getApplicationCachePathSync() {
+    throw UnimplementedError(
+      'getApplicationCachePathSync() has not been implemented.',
+    );
+  }
+
+  /// Gets the absolute path to the downloads directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms where downloads are not supported.
+  String? getDownloadsPathSync() {
+    throw UnimplementedError(
+      'getDownloadsPathSync() has not been implemented.',
+    );
+  }
+
+  /// Gets the absolute path to the user's desktop directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  String? getDesktopPathSync() {
+    throw UnimplementedError('getDesktopPathSync() has not been implemented.');
+  }
+
+  /// Gets the absolute path to the user's pictures directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  String? getPicturesPathSync() {
+    throw UnimplementedError('getPicturesPathSync() has not been implemented.');
+  }
+
+  /// Gets the absolute path to the user's music directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  String? getMusicPathSync() {
+    throw UnimplementedError('getMusicPathSync() has not been implemented.');
+  }
+
+  /// Gets the absolute path to the user's videos directory synchronously.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  String? getVideosPathSync() {
+    throw UnimplementedError('getVideosPathSync() has not been implemented.');
+  }
+
+  /// Gets the absolute path to the user's desktop directory.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  Future<String?> getDesktopPath() async => getDesktopPathSync();
+
+  /// Gets the absolute path to the user's pictures directory.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  Future<String?> getPicturesPath() async => getPicturesPathSync();
+
+  /// Gets the absolute path to the user's music directory.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  Future<String?> getMusicPath() async => getMusicPathSync();
+
+  /// Gets the absolute path to the user's videos directory.
+  ///
+  /// Returns `null` if the directory cannot be resolved or accessed.
+  /// Throws [UnsupportedError] on platforms without global user directories.
+  Future<String?> getVideosPath() async => getVideosPathSync();
+
+  /// Queries the capacity of the filesystem volume that contains [path].
+  ///
+  /// [path] selects the volume to query; it may refer to a directory or a file
+  /// on that volume. The returned [DiskSpace] describes the volume's free and
+  /// total capacity in bytes, not the size of the entity at [path].
+  ///
+  /// When [path] is `null`, the application support directory is used.
+  ///
+  /// Returns `null` if the volume cannot be queried. Implementations only
+  /// support paths that the application can access; inaccessible paths are not
+  /// resolved.
+  DiskSpace? getDiskSpaceSync({String? path}) {
+    throw UnimplementedError('getDiskSpaceSync() has not been implemented.');
+  }
+
+  /// Queries the capacity of the filesystem volume that contains [path].
+  ///
+  /// [path] selects the volume to query; it may refer to a directory or a file
+  /// on that volume. The returned [DiskSpace] describes the volume's free and
+  /// total capacity in bytes, not the size of the entity at [path].
+  ///
+  /// When [path] is `null`, the application support directory is used.
+  ///
+  /// Returns `null` if the volume cannot be queried. Implementations only
+  /// support paths that the application can access; inaccessible paths are not
+  /// resolved.
+  Future<DiskSpace?> getDiskSpace({String? path}) async =>
+      getDiskSpaceSync(path: path);
 
   /// Sets whether the filesystem entity at [path] should be excluded from backups.
   ///

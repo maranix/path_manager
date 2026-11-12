@@ -3,13 +3,16 @@ import 'dart:io';
 import 'package:jnigen/jnigen.dart';
 import 'package:logging/logging.dart';
 
-const _allowedMethods = {
-  'getCacheDir',
-  'getFilesDir',
-  'getExternalFilesDir',
-  'getExternalFilesDirs',
-  'getExternalCacheDirs',
-  'getAbsolutePath',
+const _allowedMethodsByClass = <String, Set<String>>{
+  'android.content.Context': {
+    'getCacheDir',
+    'getFilesDir',
+    'getExternalFilesDir',
+    'getExternalFilesDirs',
+    'getExternalCacheDirs',
+  },
+  'java.io.File': {'getAbsolutePath'},
+  'android.os.StatFs': {'<init>', 'getAvailableBytes', 'getTotalBytes'},
 };
 
 void main() async {
@@ -21,11 +24,16 @@ void main() async {
     stdout.writeln('${record.level.name}: ${record.message}');
   });
 
+  String? currentClass;
   final generator = JniGenerator(
     visitors: [
       Visitor(
+        classDecl: (node) {
+          currentClass = node.binaryName;
+        },
         method: (node) {
-          if (!_allowedMethods.contains(node.originalName)) {
+          final allowed = _allowedMethodsByClass[currentClass];
+          if (allowed == null || !allowed.contains(node.originalName)) {
             node.isIncluded = false;
           }
         },
@@ -37,6 +45,7 @@ void main() async {
     input: Input(
       classes: [
         'android.content.Context',
+        'android.os.StatFs',
         'java.io.File',
       ],
       androidSdk: AndroidSdk(

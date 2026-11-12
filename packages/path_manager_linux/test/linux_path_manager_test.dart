@@ -90,6 +90,110 @@ void main() {
       expect(await manager.getDownloadsPath(), '/home/alice/Downloads');
     });
 
+    test('synchronous getters resolve paths', () {
+      final manager = LinuxPathManager(
+        environment: {'TMPDIR': '/custom/tmp', 'HOME': '/home/alice'},
+        dataHome: Directory('/custom/data'),
+        cacheHome: Directory('/custom/cache'),
+        getUserDirectory: (name) =>
+            name == 'DOCUMENTS' ? Directory('/user/docs') : null,
+      );
+
+      expect(manager.getTemporaryPathSync(), '/custom/tmp');
+      expect(manager.getApplicationSupportPathSync(), '/custom/data');
+      expect(manager.getApplicationCachePathSync(), '/custom/cache');
+      expect(manager.getDocumentsPathSync(), '/user/docs');
+      expect(manager.getDownloadsPathSync(), '/home/alice/Downloads');
+    });
+
+    test('media directory getters resolve from XDG user directories', () {
+      final manager = LinuxPathManager(
+        getUserDirectory: (name) => switch (name) {
+          'DESKTOP' => Directory('/user/desktop'),
+          'PICTURES' => Directory('/user/pictures'),
+          'MUSIC' => Directory('/user/music'),
+          'VIDEOS' => Directory('/user/videos'),
+          _ => null,
+        },
+      );
+
+      expect(manager.getDesktopPathSync(), '/user/desktop');
+      expect(manager.getPicturesPathSync(), '/user/pictures');
+      expect(manager.getMusicPathSync(), '/user/music');
+      expect(manager.getVideosPathSync(), '/user/videos');
+    });
+
+    test('media directory getters fall back to HOME', () {
+      final manager = LinuxPathManager(
+        environment: {'HOME': '/home/alice'},
+        getUserDirectory: (_) => null,
+      );
+
+      expect(manager.getDesktopPathSync(), '/home/alice/Desktop');
+      expect(manager.getPicturesPathSync(), '/home/alice/Pictures');
+      expect(manager.getMusicPathSync(), '/home/alice/Music');
+      expect(manager.getVideosPathSync(), '/home/alice/Videos');
+    });
+
+    test('media directory getters return null without HOME', () {
+      final manager = LinuxPathManager(
+        environment: {},
+        getUserDirectory: (_) => null,
+      );
+
+      expect(manager.getDesktopPathSync(), isNull);
+      expect(manager.getPicturesPathSync(), isNull);
+      expect(manager.getMusicPathSync(), isNull);
+      expect(manager.getVideosPathSync(), isNull);
+    });
+
+    test('disk space uses an explicit path', () {
+      String? resolvedPath;
+      final manager = LinuxPathManager(
+        diskSpaceResolver: (path) {
+          resolvedPath = path;
+          return const DiskSpace(freeBytes: 10, totalBytes: 20);
+        },
+      );
+
+      final space = manager.getDiskSpaceSync(path: '/mnt/media');
+
+      expect(resolvedPath, '/mnt/media');
+      expect(space, const DiskSpace(freeBytes: 10, totalBytes: 20));
+    });
+
+    test('disk space falls back to the application support path', () {
+      String? resolvedPath;
+      final manager = LinuxPathManager(
+        dataHome: Directory('/custom/data'),
+        diskSpaceResolver: (path) {
+          resolvedPath = path;
+          return const DiskSpace(freeBytes: 10, totalBytes: 20);
+        },
+      );
+
+      expect(manager.getDiskSpaceSync(), isNotNull);
+      expect(resolvedPath, '/custom/data');
+    });
+
+    test('disk space reports real volume capacity on Linux', () async {
+      if (!Platform.isLinux) return;
+      final tempDir = await Directory.systemTemp.createTemp(
+        'linux_path_manager_disk_space',
+      );
+      try {
+        final manager = LinuxPathManager();
+        final space = manager.getDiskSpaceSync(path: tempDir.path);
+
+        expect(space, isNotNull);
+        expect(space!.totalBytes, greaterThan(0));
+        expect(space.freeBytes, greaterThanOrEqualTo(0));
+        expect(space.freeBytes, lessThanOrEqualTo(space.totalBytes));
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
     test('getApplicationNoBackupDirectory creates and resolves __no_backup__ subpath', () async {
       final tempDir = await Directory.systemTemp.createTemp(
         'linux_path_manager_test',

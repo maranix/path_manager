@@ -25,5 +25,26 @@ void main() {
         throwsA(isA<UnsupportedError>()),
       );
     });
+
+    test('global media directories throw UnsupportedError', () {
+      final manager = AndroidPathManager();
+
+      expect(
+        () => manager.getDesktopPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => manager.getPicturesPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => manager.getMusicPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => manager.getVideosPathSync(),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
   });
 }

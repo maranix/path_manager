@@ -1,0 +1,34 @@
+name: path_manager_linux
+description: Linux implementation of the path_manager plugin adhering to the XDG Base Directory specification.
+version: 0.9.0
+homepage: https://github.com/maranix/path_manager
+repository: https://github.com/maranix/path_manager/tree/main/packages/path_manager_linux
+issue_tracker: https://github.com/maranix/path_manager/issues
+
+environment:
+  sdk: ^3.14.0
+  flutter: ">=3.50.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  path_manager_platform_interface: ^0.9.0
+  path: ^1.9.1
+  xdg_directories: ^1.1.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  test: ^1.28.0
+
+dependency_overrides:
+  path_manager_platform_interface:
+    path: ../path_manager_platform_interface
+
+flutter:
+  plugin:
+    implements: path_manager
+    platforms:
+      linux:
+        dartPluginClass: LinuxPathManager

@@ -1,0 +1,11 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:path_manager_linux_example/main.dart';
+
+void main() {
+  testWidgets('Renders path_manager_linux example app', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+    expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.text('path_manager_linux example'), findsOneWidget);
+  });
+}

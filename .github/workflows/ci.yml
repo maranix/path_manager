@@ -136,6 +136,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Disable Spotlight on workspace to speed up I/O
+        run: sudo mdutil -i off "${{ github.workspace }}"
+
+      - name: Boot iOS Simulator Early (Background)
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available 'iPhone' | grep -m 1 -E -o '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+          if [ -n "$DEVICE_ID" ]; then
+            echo "BOOT_DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+            xcrun simctl boot "$DEVICE_ID" || true
+          fi
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -177,11 +188,9 @@ jobs:
 
       - name: Run iOS Simulator Integration Tests
         run: |
-          DEVICE_ID=$(xcrun simctl list devices available 'iPhone' | grep -m 1 -E -o '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
-          if [ -n "$DEVICE_ID" ]; then
-            xcrun simctl boot "$DEVICE_ID" || true
+          if [ -n "$BOOT_DEVICE_ID" ]; then
             cd packages/path_manager/example
-            flutter test integration_test -d "$DEVICE_ID"
+            flutter test integration_test -d "$BOOT_DEVICE_ID"
           else
             echo "No iPhone simulator found, skipping iOS integration test run"
           fi

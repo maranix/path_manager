@@ -50,8 +50,16 @@ class AndroidPathManager extends PlatformPathManager {
     }
   }
 
+  Never _unsupportedMediaDirectory(String name) {
+    throw UnsupportedError(
+      'Global $name directories are not supported on Android due to scoped '
+      'storage. Use getApplicationDocumentsDirectory() or '
+      'getExternalStorageDirectory() instead.',
+    );
+  }
+
   @override
-  Future<String?> getTemporaryPath() async {
+  String? getTemporaryPathSync() {
     final context = _getContext();
     try {
       return _resolveFilePath(context.cacheDir);
@@ -61,7 +69,7 @@ class AndroidPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getApplicationSupportPath() async {
+  String? getApplicationSupportPathSync() {
     final context = _getContext();
     try {
       return _resolveFilePath(context.filesDir);
@@ -71,7 +79,7 @@ class AndroidPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getDocumentsPath() async {
+  String? getDocumentsPathSync() {
     final context = _getContext();
     try {
       return _resolveFilePath(context.filesDir);
@@ -81,10 +89,88 @@ class AndroidPathManager extends PlatformPathManager {
   }
 
   @override
-  Future<String?> getApplicationCachePath() async {
+  String? getApplicationCachePathSync() {
     final context = _getContext();
     try {
       return _resolveFilePath(context.cacheDir);
+    } finally {
+      context.release();
+    }
+  }
+
+  @override
+  String? getDownloadsPathSync() {
+    final context = _getContext();
+    try {
+      final jTypeStr = StorageDirectory.downloads.dirName.toJString();
+      try {
+        return _resolveFilePath(context.getExternalFilesDir(jTypeStr));
+      } finally {
+        jTypeStr.release();
+      }
+    } catch (e) {
+      throw MissingPlatformDirectoryException(
+        'Failed to resolve downloads directory on Android: $e. '
+        'Ensure storage is available and properly configured in AndroidManifest.xml. '
+        'Refer to path_manager documentation for details.',
+      );
+    } finally {
+      context.release();
+    }
+  }
+
+  @override
+  String? getDesktopPathSync() => _unsupportedMediaDirectory('desktop');
+
+  @override
+  String? getPicturesPathSync() => _unsupportedMediaDirectory('pictures');
+
+  @override
+  String? getMusicPathSync() => _unsupportedMediaDirectory('music');
+
+  @override
+  String? getVideosPathSync() => _unsupportedMediaDirectory('videos');
+
+  @override
+  Future<String?> getTemporaryPath() async => getTemporaryPathSync();
+
+  @override
+  Future<String?> getApplicationSupportPath() async =>
+      getApplicationSupportPathSync();
+
+  @override
+  Future<String?> getDocumentsPath() async => getDocumentsPathSync();
+
+  @override
+  Future<String?> getApplicationCachePath() async =>
+      getApplicationCachePathSync();
+
+  @override
+  Future<String?> getDownloadsPath() async => getDownloadsPathSync();
+
+  @override
+  DiskSpace? getDiskSpaceSync({String? path}) {
+    final context = _getContext();
+    try {
+      final target = path ?? _resolveFilePath(context.filesDir);
+      if (target == null) return null;
+
+      final jPath = target.toJString();
+      try {
+        final stat = android_jni.StatFs(jPath);
+        try {
+          return DiskSpace(
+            freeBytes: stat.availableBytes,
+            totalBytes: stat.totalBytes,
+          );
+        } finally {
+          stat.release();
+        }
+      } finally {
+        jPath.release();
+      }
+    } catch (_) {
+      return null;
     } finally {
       context.release();
     }
@@ -92,7 +178,7 @@ class AndroidPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getApplicationNoBackupDirectory() async {
-    final supportPath = await getApplicationSupportPath();
+    final supportPath = getApplicationSupportPathSync();
     if (supportPath == null) return null;
 
     final noBackupPath = '$supportPath/__no_backup__';
@@ -168,27 +254,6 @@ class AndroidPathManager extends PlatformPathManager {
       throw MissingPlatformDirectoryException(
         'Failed to resolve external cache directories on Android: $e. '
         'Ensure external storage is mounted and properly configured in AndroidManifest.xml. '
-        'Refer to path_manager documentation for details.',
-      );
-    } finally {
-      context.release();
-    }
-  }
-
-  @override
-  Future<String?> getDownloadsPath() async {
-    final context = _getContext();
-    try {
-      final jTypeStr = StorageDirectory.downloads.dirName.toJString();
-      try {
-        return _resolveFilePath(context.getExternalFilesDir(jTypeStr));
-      } finally {
-        jTypeStr.release();
-      }
-    } catch (e) {
-      throw MissingPlatformDirectoryException(
-        'Failed to resolve downloads directory on Android: $e. '
-        'Ensure storage is available and properly configured in AndroidManifest.xml. '
         'Refer to path_manager documentation for details.',
       );
     } finally {

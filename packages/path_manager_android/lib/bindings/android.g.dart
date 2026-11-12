@@ -246,6 +246,117 @@ final class $Context$Type$ extends jni$_.JType<Context> {
   String get signature => r'Landroid/content/Context;';
 }
 
+/// from: `android.os.StatFs`
+extension type StatFs._(jni$_.JObject _$this) implements jni$_.JObject {
+  static final _class = jni$_.JClass.forName(r'android/os/StatFs');
+
+  /// The type which includes information such as the signature of this class.
+  static const jni$_.JType<StatFs> type = $StatFs$Type$();
+  static final _id_new$ = _class.constructorId(
+    r'(Ljava/lang/String;)V',
+  );
+
+  static final _new$ =
+      jni$_.ProtectedJniExtensions.lookup<
+            jni$_.NativeFunction<
+              jni$_.JniResult Function(
+                jni$_.Pointer<jni$_.Void>,
+                jni$_.JMethodIDPtr,
+                jni$_.VarArgs<(jni$_.Pointer<jni$_.Void>,)>,
+              )
+            >
+          >('globalEnv_NewObject')
+          .asFunction<
+            jni$_.JniResult Function(
+              jni$_.Pointer<jni$_.Void>,
+              jni$_.JMethodIDPtr,
+              jni$_.Pointer<jni$_.Void>,
+            )
+          >();
+
+  /// from: `public void <init>(java.lang.String string)`
+  /// The returned object must be released after use, by calling the [release] method.
+  factory StatFs(
+    jni$_.JString? string,
+  ) {
+    final _$$classRef = _class.reference;
+    final _$string = string?.reference ?? jni$_.jNullReference;
+    return _new$(
+      _$$classRef.pointer,
+      _id_new$.pointer,
+      _$string.pointer,
+    ).object<StatFs>();
+  }
+}
+
+extension StatFs$$Methods on StatFs {
+  static final _id_get$availableBytes = StatFs._class.instanceMethodId(
+    r'getAvailableBytes',
+    r'()J',
+  );
+
+  static final _get$availableBytes =
+      jni$_.ProtectedJniExtensions.lookup<
+            jni$_.NativeFunction<
+              jni$_.JniResult Function(
+                jni$_.Pointer<jni$_.Void>,
+                jni$_.JMethodIDPtr,
+              )
+            >
+          >('globalEnv_CallLongMethod')
+          .asFunction<
+            jni$_.JniResult Function(
+              jni$_.Pointer<jni$_.Void>,
+              jni$_.JMethodIDPtr,
+            )
+          >();
+
+  /// from: `public long getAvailableBytes()`
+  core$_.int get availableBytes {
+    final _$$selfRef = reference;
+    return _get$availableBytes(
+      _$$selfRef.pointer,
+      _id_get$availableBytes.pointer,
+    ).long;
+  }
+
+  static final _id_get$totalBytes = StatFs._class.instanceMethodId(
+    r'getTotalBytes',
+    r'()J',
+  );
+
+  static final _get$totalBytes =
+      jni$_.ProtectedJniExtensions.lookup<
+            jni$_.NativeFunction<
+              jni$_.JniResult Function(
+                jni$_.Pointer<jni$_.Void>,
+                jni$_.JMethodIDPtr,
+              )
+            >
+          >('globalEnv_CallLongMethod')
+          .asFunction<
+            jni$_.JniResult Function(
+              jni$_.Pointer<jni$_.Void>,
+              jni$_.JMethodIDPtr,
+            )
+          >();
+
+  /// from: `public long getTotalBytes()`
+  core$_.int get totalBytes {
+    final _$$selfRef = reference;
+    return _get$totalBytes(_$$selfRef.pointer, _id_get$totalBytes.pointer).long;
+  }
+}
+
+final class $StatFs$Type$ extends jni$_.JType<StatFs> {
+  @jni$_.internal
+  const $StatFs$Type$();
+
+  @jni$_.internal
+  @core$_.override
+  String get signature => r'Landroid/os/StatFs;';
+}
+
 /// from: `java.io.File`
 extension type File._(jni$_.JObject _$this)
     implements jni$_.JObject, Comparable, Serializable {

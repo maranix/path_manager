@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_manager_platform_interface/path_manager_platform_interface.dart';
 import 'package:path_manager_windows/path_manager_windows.dart';
 import 'package:win32/win32.dart';
@@ -35,6 +36,7 @@ void main() {
     test('synchronous getters dispatch to their resolvers', () {
       final manager = WindowsPathManager(
         tempPathResolver: () => r'C:\Users\Test\AppData\Local\Temp',
+        applicationId: 'path_manager_test',
         knownFolderPathResolver: (guid) {
           if (guid == FOLDERID_RoamingAppData) {
             return r'C:\Users\Test\AppData\Roaming';
@@ -54,12 +56,12 @@ void main() {
       );
       expect(
         manager.getApplicationSupportPathSync(),
-        r'C:\Users\Test\AppData\Roaming',
+        r'C:\Users\Test\AppData\Roaming\path_manager_test',
       );
       expect(manager.getDocumentsPathSync(), r'C:\Users\Test\Documents');
       expect(
         manager.getApplicationCachePathSync(),
-        r'C:\Users\Test\AppData\Local',
+        r'C:\Users\Test\AppData\Local\path_manager_test',
       );
       expect(manager.getDownloadsPathSync(), r'C:\Users\Test\Downloads');
     });
@@ -81,6 +83,7 @@ void main() {
       'getApplicationSupportPath dispatches FOLDERID_RoamingAppData',
       () async {
         final manager = WindowsPathManager(
+          applicationId: 'path_manager_test',
           knownFolderPathResolver: (guid) {
             if (guid == FOLDERID_RoamingAppData) {
               return r'C:\Users\Test\AppData\Roaming';
@@ -90,7 +93,7 @@ void main() {
         );
         expect(
           await manager.getApplicationSupportPath(),
-          r'C:\Users\Test\AppData\Roaming',
+          r'C:\Users\Test\AppData\Roaming\path_manager_test',
         );
       },
     );
@@ -109,6 +112,7 @@ void main() {
 
     test('getApplicationCachePath dispatches FOLDERID_LocalAppData', () async {
       final manager = WindowsPathManager(
+        applicationId: 'path_manager_test',
         knownFolderPathResolver: (guid) {
           if (guid == FOLDERID_LocalAppData) {
             return r'C:\Users\Test\AppData\Local';
@@ -118,7 +122,7 @@ void main() {
       );
       expect(
         await manager.getApplicationCachePath(),
-        r'C:\Users\Test\AppData\Local',
+        r'C:\Users\Test\AppData\Local\path_manager_test',
       );
     });
 
@@ -166,11 +170,17 @@ void main() {
       expect(space, const DiskSpace(freeBytes: 10, totalBytes: 20));
     });
 
-    test('disk space falls back to the application support path', () {
+    test('disk space falls back to the application support path', () async {
+      final base = await Directory.systemTemp.createTemp(
+        'windows_disk_space',
+      );
+      addTearDown(() => base.delete(recursive: true));
+
       String? resolvedPath;
       final manager = WindowsPathManager(
+        applicationId: 'path_manager_test',
         knownFolderPathResolver: (guid) =>
-            guid == FOLDERID_RoamingAppData ? r'C:\Support' : null,
+            guid == FOLDERID_RoamingAppData ? base.path : null,
         diskSpaceResolver: (path) {
           resolvedPath = path;
           return const DiskSpace(freeBytes: 10, totalBytes: 20);
@@ -178,7 +188,12 @@ void main() {
       );
 
       expect(manager.getDiskSpaceSync(), isNotNull);
-      expect(resolvedPath, r'C:\Support');
+      // On Windows the uncreated app subdirectory is resolved to its existing
+      // parent. Elsewhere the path is passed through unchanged.
+      final expected = Platform.isWindows
+          ? base.path
+          : p.windows.join(base.path, 'path_manager_test');
+      expect(resolvedPath, expected);
     });
 
     test('disk space returns null when no path can be resolved', () {
@@ -196,6 +211,7 @@ void main() {
       );
       try {
         final manager = WindowsPathManager(
+          applicationId: 'path_manager_test',
           knownFolderPathResolver: (guid) => tempDir.path,
         );
         final noBackupPath = await manager.getApplicationNoBackupDirectory();

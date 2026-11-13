@@ -17,15 +17,18 @@ typedef DiskSpaceResolver = DiskSpace? Function(String path);
 
 /// The Windows implementation of [PlatformPathManager] using Win32 Shell Known Folders via FFI.
 class WindowsPathManager extends PlatformPathManager {
-  /// Creates a new [WindowsPathManager] with optional resolvers for unit testing.
+  /// Creates a new [WindowsPathManager] with optional resolvers and an
+  /// application ID override for unit testing.
   WindowsPathManager({
     KnownFolderPathResolver? knownFolderPathResolver,
     TempPathResolver? tempPathResolver,
     DiskSpaceResolver? diskSpaceResolver,
+    String? applicationId,
   }) : _knownFolderPathResolver =
            knownFolderPathResolver ?? _defaultGetKnownFolderPath,
        _tempPathResolver = tempPathResolver ?? _defaultGetTempPath,
-       _diskSpaceResolver = diskSpaceResolver ?? _defaultGetDiskSpace;
+       _diskSpaceResolver = diskSpaceResolver ?? _defaultGetDiskSpace,
+       _applicationIdOverride = applicationId;
 
   /// Registers the Windows implementation of [PlatformPathManager].
   static void registerWith() {
@@ -35,6 +38,147 @@ class WindowsPathManager extends PlatformPathManager {
   final KnownFolderPathResolver _knownFolderPathResolver;
   final TempPathResolver _tempPathResolver;
   final DiskSpaceResolver _diskSpaceResolver;
+  final String? _applicationIdOverride;
+
+  /// The application-specific subdirectory under the known folders.
+  ///
+  /// Uses the executable's `CompanyName\ProductName` version metadata when
+  /// available, falling back to the executable filename.
+  late final String _applicationId =
+      _normalizeApplicationId(_applicationIdOverride) ??
+      _defaultApplicationId();
+
+  static String _defaultApplicationId() {
+    if (!Platform.isWindows) {
+      return _normalizeApplicationId(
+            p.windows.basenameWithoutExtension(Platform.resolvedExecutable),
+          ) ??
+          'path_manager_app';
+    }
+
+    PWSTR? moduleNameBuffer;
+    Pointer<Uint8>? versionInfo;
+    try {
+      moduleNameBuffer = wsalloc(MAX_PATH + 1);
+      final moduleNameLength = GetModuleFileName(
+        null,
+        moduleNameBuffer,
+        MAX_PATH + 1,
+      ).value;
+      if (moduleNameLength == 0) {
+        return _normalizeApplicationId(
+              p.windows.basenameWithoutExtension(Platform.resolvedExecutable),
+            ) ??
+            'path_manager_app';
+      }
+
+      final moduleName = moduleNameBuffer.toDartString();
+      String? companyName;
+      String? productName;
+
+      final infoSize = GetFileVersionInfoSize(
+        PCWSTR(moduleNameBuffer),
+        null,
+      ).value;
+      if (infoSize > 0) {
+        versionInfo = pkg_ffi.calloc<Uint8>(infoSize);
+        final loaded = GetFileVersionInfo(
+          PCWSTR(moduleNameBuffer),
+          infoSize,
+          versionInfo,
+        ).value;
+        if (loaded) {
+          companyName = _queryVersionString(versionInfo, 'CompanyName');
+          productName = _queryVersionString(versionInfo, 'ProductName');
+        }
+      }
+
+      final company = _sanitizeComponent(companyName);
+      final product =
+          _sanitizeComponent(productName) ??
+          _sanitizeComponent(p.windows.basenameWithoutExtension(moduleName));
+
+      if (product == null) return 'path_manager_app';
+      return company == null ? product : p.windows.join(company, product);
+    } catch (_) {
+      return _normalizeApplicationId(
+            p.windows.basenameWithoutExtension(Platform.resolvedExecutable),
+          ) ??
+          'path_manager_app';
+    } finally {
+      if (moduleNameBuffer != null) free(moduleNameBuffer);
+      if (versionInfo != null) pkg_ffi.calloc.free(versionInfo);
+    }
+  }
+
+  static String? _queryVersionString(
+    Pointer<Uint8> versionInfo,
+    String key,
+  ) {
+    // Try the common CP1252 and Unicode English translation tables first.
+    for (final language in const ['040904e4', '040904b0']) {
+      final subBlock = '\\StringFileInfo\\$language\\$key'.toPcwstr();
+      final value = pkg_ffi.calloc<Pointer<pkg_ffi.Utf16>>();
+      final length = pkg_ffi.calloc<Uint32>();
+      try {
+        if (VerQueryValue(
+          versionInfo,
+          subBlock,
+          value.cast(),
+          length,
+        )) {
+          final stringPointer = value.value;
+          if (stringPointer != nullptr && length.value > 0) {
+            return stringPointer.toDartString();
+          }
+        }
+      } finally {
+        free(subBlock);
+        pkg_ffi.calloc.free(value);
+        pkg_ffi.calloc.free(length);
+      }
+    }
+    return null;
+  }
+
+  static String? _normalizeApplicationId(String? value) {
+    if (value == null) return null;
+    final components = value
+        .replaceAll('\\', '/')
+        .split('/')
+        .map(_sanitizeComponent)
+        .whereType<String>()
+        .toList();
+    return components.isEmpty ? null : p.windows.joinAll(components);
+  }
+
+  static String? _sanitizeComponent(String? value) {
+    if (value == null) return null;
+    var sanitized = value
+        .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
+        .trim()
+        .replaceAll(RegExp(r'[. ]+$'), '');
+    if (sanitized.isEmpty || sanitized == '.' || sanitized == '..') {
+      return null;
+    }
+    if (sanitized.length > 255) {
+      sanitized = sanitized.substring(0, 255);
+    }
+    return sanitized;
+  }
+
+  static String? _ensureDirectory(String? path) {
+    if (path == null) return null;
+    if (Platform.isWindows) {
+      try {
+        Directory(path).createSync(recursive: true);
+      } on FileSystemException {
+        // Return the path even when the directory cannot be created; callers
+        // can decide whether to retry or surface the filesystem error.
+      }
+    }
+    return path;
+  }
 
   static String? _defaultGetKnownFolderPath(GUID folderId) {
     if (!Platform.isWindows) return null;
@@ -113,16 +257,23 @@ class WindowsPathManager extends PlatformPathManager {
   String? getTemporaryPathSync() => _tempPathResolver();
 
   @override
-  String? getApplicationSupportPathSync() =>
-      _knownFolderPathResolver(FOLDERID_RoamingAppData);
+  String? getApplicationSupportPathSync() => _scopedPath(
+    _knownFolderPathResolver(FOLDERID_RoamingAppData),
+  );
 
   @override
   String? getDocumentsPathSync() =>
       _knownFolderPathResolver(FOLDERID_Documents);
 
   @override
-  String? getApplicationCachePathSync() =>
-      _knownFolderPathResolver(FOLDERID_LocalAppData);
+  String? getApplicationCachePathSync() => _scopedPath(
+    _knownFolderPathResolver(FOLDERID_LocalAppData),
+  );
+
+  String? _scopedPath(String? basePath) {
+    if (basePath == null) return null;
+    return p.windows.join(basePath, _applicationId);
+  }
 
   @override
   String? getDownloadsPathSync() =>
@@ -145,25 +296,38 @@ class WindowsPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getApplicationSupportPath() async =>
-      getApplicationSupportPathSync();
+      _ensureDirectory(getApplicationSupportPathSync());
 
   @override
   Future<String?> getDocumentsPath() async => getDocumentsPathSync();
 
   @override
   Future<String?> getApplicationCachePath() async =>
-      getApplicationCachePathSync();
+      _ensureDirectory(getApplicationCachePathSync());
 
   @override
   Future<String?> getDownloadsPath() async => getDownloadsPathSync();
 
   @override
   DiskSpace? getDiskSpaceSync({String? path}) {
-    final target =
+    final requested =
         path ??
         getApplicationSupportPathSync() ??
         getApplicationCachePathSync();
-    if (target == null) return null;
+    if (requested == null) return null;
+
+    // Application-scoped directories may not have been created yet. Walk up to
+    // the nearest existing ancestor so the containing volume can still be
+    // queried.
+    var target = requested;
+    if (Platform.isWindows) {
+      while (FileSystemEntity.typeSync(target) ==
+          FileSystemEntityType.notFound) {
+        final parent = p.windows.dirname(target);
+        if (parent == target) return null;
+        target = parent;
+      }
+    }
     return _diskSpaceResolver(target);
   }
 

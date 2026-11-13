@@ -15,16 +15,28 @@ typedef _StatvfsFn = int Function(
   ffi.Pointer<ffi.Uint8> buffer,
 );
 
+typedef _GApplicationGetDefaultC = ffi.IntPtr Function();
+typedef _GApplicationGetDefaultDart = int Function();
+typedef _GApplicationGetApplicationIdC = ffi.Pointer<pkg_ffi.Utf8> Function(
+  ffi.IntPtr,
+);
+typedef _GApplicationGetApplicationIdDart = ffi.Pointer<pkg_ffi.Utf8> Function(
+  int,
+);
+
 /// The Linux implementation of [PlatformPathManager] adhering to the XDG Base Directory specification.
 class LinuxPathManager extends PlatformPathManager {
-  /// Creates a new [LinuxPathManager] with optional environment and directory overrides for testing.
+  /// Creates a new [LinuxPathManager] with optional environment, directory,
+  /// and application ID overrides for testing.
   LinuxPathManager({
     this.environment,
     Directory? Function(String name)? getUserDirectory,
     this.dataHome,
     this.cacheHome,
+    String? applicationId,
     DiskSpaceResolver? diskSpaceResolver,
   }) : _getUserDir = getUserDirectory ?? xdg.getUserDirectory,
+       _applicationIdOverride = applicationId,
        _diskSpaceResolver = diskSpaceResolver ?? _defaultGetDiskSpace;
 
   /// Registers the Linux implementation of [PlatformPathManager].
@@ -44,9 +56,71 @@ class LinuxPathManager extends PlatformPathManager {
   /// Optional cache home directory override for testing.
   final Directory? cacheHome;
 
+  final String? _applicationIdOverride;
+
+  /// The XDG application identifier, falling back to the executable name.
+  late final String? _applicationId =
+      _normalizeApplicationId(_applicationIdOverride) ??
+      _defaultApplicationId();
+
   Map<String, String> get _env => environment ?? Platform.environment;
 
   static final _StatvfsFn? _statvfs = _lookupStatvfs();
+
+  static final ffi.DynamicLibrary? _gio = _lookupGio();
+
+  static ffi.DynamicLibrary? _lookupGio() {
+    if (!Platform.isLinux) return null;
+    try {
+      return ffi.DynamicLibrary.open('libgio-2.0.so.0');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? _defaultApplicationId() {
+    if (Platform.isLinux) {
+      final gioId = _gioApplicationId();
+      if (gioId != null) return gioId;
+    }
+
+    return _normalizeApplicationId(
+      p.basenameWithoutExtension(Platform.resolvedExecutable),
+    );
+  }
+
+  static String? _gioApplicationId() {
+    final gio = _gio;
+    if (gio == null) return null;
+    try {
+      final getDefault = gio
+          .lookupFunction<
+            _GApplicationGetDefaultC,
+            _GApplicationGetDefaultDart
+          >('g_application_get_default');
+      final getApplicationId = gio
+          .lookupFunction<
+            _GApplicationGetApplicationIdC,
+            _GApplicationGetApplicationIdDart
+          >('g_application_get_application_id');
+
+      final application = getDefault();
+      if (application == 0) return null;
+
+      final idPointer = getApplicationId(application);
+      if (idPointer == ffi.nullptr) return null;
+
+      return _normalizeApplicationId(idPointer.toDartString());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? _normalizeApplicationId(String? value) {
+    if (value == null) return null;
+    final normalized = value.replaceAll(RegExp(r'[/\\\x00]'), '_').trim();
+    return normalized.isEmpty ? null : normalized;
+  }
 
   static _StatvfsFn? _lookupStatvfs() {
     if (!Platform.isLinux) return null;
@@ -111,13 +185,16 @@ class LinuxPathManager extends PlatformPathManager {
   }
 
   @override
-  String? getApplicationSupportPathSync() {
-    return dataHome?.path ?? xdg.dataHome.path;
-  }
+  String? getApplicationSupportPathSync() =>
+      _scopedPath(dataHome?.path ?? xdg.dataHome.path);
 
   @override
-  String? getApplicationCachePathSync() {
-    return cacheHome?.path ?? xdg.cacheHome.path;
+  String? getApplicationCachePathSync() =>
+      _scopedPath(cacheHome?.path ?? xdg.cacheHome.path);
+
+  String _scopedPath(String basePath) {
+    final applicationId = _applicationId;
+    return applicationId == null ? basePath : p.join(basePath, applicationId);
   }
 
   @override
@@ -143,11 +220,22 @@ class LinuxPathManager extends PlatformPathManager {
 
   @override
   Future<String?> getApplicationSupportPath() async =>
-      getApplicationSupportPathSync();
+      _ensureDirectory(getApplicationSupportPathSync());
 
   @override
   Future<String?> getApplicationCachePath() async =>
-      getApplicationCachePathSync();
+      _ensureDirectory(getApplicationCachePathSync());
+
+  static String? _ensureDirectory(String? path) {
+    if (path == null) return null;
+    try {
+      Directory(path).createSync(recursive: true);
+    } on FileSystemException {
+      // Return the path even when the directory cannot be created; callers
+      // can decide whether to retry or surface the filesystem error.
+    }
+    return path;
+  }
 
   @override
   Future<String?> getDocumentsPath() async => getDocumentsPathSync();

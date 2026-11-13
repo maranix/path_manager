@@ -39,18 +39,49 @@ void main() {
       },
     );
 
-    test('getApplicationSupportPath returns dataHome', () async {
+    test('getApplicationSupportPath scopes dataHome to the app id', () async {
       final manager = LinuxPathManager(
         dataHome: Directory('/custom/data'),
+        applicationId: 'com.example.app',
       );
-      expect(await manager.getApplicationSupportPath(), '/custom/data');
+      expect(
+        await manager.getApplicationSupportPath(),
+        p.join('/custom/data', 'com.example.app'),
+      );
     });
 
-    test('getApplicationCachePath returns cacheHome', () async {
+    test('getApplicationCachePath scopes cacheHome to the app id', () async {
       final manager = LinuxPathManager(
         cacheHome: Directory('/custom/cache'),
+        applicationId: 'com.example.app',
       );
-      expect(await manager.getApplicationCachePath(), '/custom/cache');
+      expect(
+        await manager.getApplicationCachePath(),
+        p.join('/custom/cache', 'com.example.app'),
+      );
+    });
+
+    test('application directories are created on first resolution', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'linux_app_scope_test',
+      );
+      try {
+        final manager = LinuxPathManager(
+          dataHome: tempDir,
+          cacheHome: tempDir,
+          applicationId: 'com.example.app',
+        );
+
+        final support = await manager.getApplicationSupportPath();
+        final cache = await manager.getApplicationCachePath();
+
+        expect(support, p.join(tempDir.path, 'com.example.app'));
+        expect(cache, p.join(tempDir.path, 'com.example.app'));
+        expect(Directory(support!).existsSync(), isTrue);
+        expect(Directory(cache!).existsSync(), isTrue);
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
     });
 
     test(
@@ -96,13 +127,20 @@ void main() {
         environment: {'TMPDIR': '/custom/tmp', 'HOME': '/home/alice'},
         dataHome: Directory('/custom/data'),
         cacheHome: Directory('/custom/cache'),
+        applicationId: 'com.example.app',
         getUserDirectory: (name) =>
             name == 'DOCUMENTS' ? Directory('/user/docs') : null,
       );
 
       expect(manager.getTemporaryPathSync(), '/custom/tmp');
-      expect(manager.getApplicationSupportPathSync(), '/custom/data');
-      expect(manager.getApplicationCachePathSync(), '/custom/cache');
+      expect(
+        manager.getApplicationSupportPathSync(),
+        p.join('/custom/data', 'com.example.app'),
+      );
+      expect(
+        manager.getApplicationCachePathSync(),
+        p.join('/custom/cache', 'com.example.app'),
+      );
       expect(manager.getDocumentsPathSync(), '/user/docs');
       expect(manager.getDownloadsPathSync(), '/home/alice/Downloads');
     });

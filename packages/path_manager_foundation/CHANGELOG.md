@@ -1,5 +1,6 @@
 ## 1.0.0
 
+- macOS application support and cache directories are now scoped to the bundle identifier.
 - Added synchronous Foundation path resolution for temporary, support, documents, cache, and downloads directories.
 - Added desktop, pictures, music, and videos directory getters on macOS. Global media directories throw `UnsupportedError` on iOS.
 - Added `getDiskSpace()` and `getDiskSpaceSync()` using `attributesOfFileSystemForPath:error:` with `NSFileSystemFreeSize` and `NSFileSystemSize`.

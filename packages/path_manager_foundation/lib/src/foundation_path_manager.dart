@@ -12,10 +12,24 @@ import '../bindings/foundation.g.dart';
 /// This class handles directory path resolutions by communicating with the
 /// macOS/iOS platform APIs using Objective-C FFI bindings.
 class FoundationPathManager extends PlatformPathManager {
+  /// Creates a new [FoundationPathManager].
+  ///
+  /// [bundleIdentifier] overrides the main bundle identifier used to scope
+  /// macOS application support and cache directories. It is intended for
+  /// testing and defaults to the running bundle's identifier.
+  FoundationPathManager({String? bundleIdentifier})
+    : _bundleIdentifierOverride = bundleIdentifier;
+
   /// Registers the iOS/macOS implementation of [PlatformPathManager].
   static void registerWith() {
     PlatformPathManager.instance = FoundationPathManager();
   }
+
+  final String? _bundleIdentifierOverride;
+
+  String? get _bundleIdentifier =>
+      _bundleIdentifierOverride ??
+      objc.NSBundle.getMainBundle().bundleIdentifier?.toDartString();
 
   @override
   String? getTemporaryPathSync() {
@@ -133,7 +147,30 @@ class FoundationPathManager extends PlatformPathManager {
       appropriateForURL: null,
       create: true,
     );
-    return url?.path?.toDartString();
+    var path = url?.path?.toDartString();
+    if (path == null) return null;
+
+    // On macOS these directories are shared by all applications when the app
+    // is not sandboxed. Scope them to the bundle identifier, matching the
+    // convention used by other application-scoped platforms. In a sandboxed
+    // app the base path is already inside the app container, so the extra
+    // component is harmless.
+    if (Platform.isMacOS &&
+        (directory == NSSearchPathDirectory.NSApplicationSupportDirectory ||
+            directory == NSSearchPathDirectory.NSCachesDirectory)) {
+      final bundleIdentifier = _bundleIdentifier;
+      if (bundleIdentifier != null && bundleIdentifier.isNotEmpty) {
+        path = '$path/$bundleIdentifier';
+      }
+    }
+
+    try {
+      Directory(path).createSync(recursive: true);
+    } on FileSystemException {
+      // Return the path even when the directory cannot be created; callers
+      // can decide whether to retry or surface the filesystem error.
+    }
+    return path;
   }
 
   @override

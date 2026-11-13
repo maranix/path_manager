@@ -95,6 +95,31 @@ void main() {
       }
     });
 
+    test('scopes support and cache directories to the bundle identifier', () {
+      if (!Platform.isMacOS) return;
+      final manager = FoundationPathManager(
+        bundleIdentifier: 'com.example.path_manager_test',
+      );
+
+      final support = manager.getApplicationSupportPathSync();
+      final cache = manager.getApplicationCachePathSync();
+
+      expect(support, endsWith('/com.example.path_manager_test'));
+      expect(cache, endsWith('/com.example.path_manager_test'));
+      addTearDown(() {
+        for (final path in [support, cache]) {
+          if (path == null) continue;
+          final directory = Directory(path);
+          if (directory.existsSync()) {
+            directory.deleteSync(recursive: true);
+          }
+        }
+      });
+
+      expect(Directory(support!).existsSync(), isTrue);
+      expect(Directory(cache!).existsSync(), isTrue);
+    });
+
     test('media directory getters resolve on macOS', () {
       if (!Platform.isMacOS) return;
       final manager = FoundationPathManager();

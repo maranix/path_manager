@@ -5,3 +5,5 @@ The iOS and macOS implementation of the [`path_manager`](https://pub.dev/package
 ## Usage
 
 This package is endorsed by `path_manager`. When you depend on `path_manager: ^1.0.0`, this package is automatically included on iOS and macOS.
+
+On macOS, application support and cache directories are scoped to the bundle identifier.

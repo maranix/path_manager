@@ -157,11 +157,21 @@ class LinuxPathManager extends PlatformPathManager {
 
   @override
   DiskSpace? getDiskSpaceSync({String? path}) {
-    final target =
+    final requested =
         path ??
         getApplicationSupportPathSync() ??
         getApplicationCachePathSync();
-    if (target == null) return null;
+    if (requested == null) return null;
+
+    // `statvfs` requires an existing path. Walk up to the nearest existing
+    // ancestor so default directories that have not been created yet still
+    // report their containing volume.
+    var target = requested;
+    while (FileSystemEntity.typeSync(target) == FileSystemEntityType.notFound) {
+      final parent = p.dirname(target);
+      if (parent == target) return null;
+      target = parent;
+    }
     return _diskSpaceResolver(target);
   }
 

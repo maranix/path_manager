@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_manager_linux/path_manager_linux.dart';
 import 'package:path_manager_platform_interface/path_manager_platform_interface.dart';
 
@@ -148,6 +149,8 @@ void main() {
     });
 
     test('disk space uses an explicit path', () {
+      final tempDir = Directory.systemTemp.createTempSync('linux_disk_space');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
       String? resolvedPath;
       final manager = LinuxPathManager(
         diskSpaceResolver: (path) {
@@ -156,16 +159,18 @@ void main() {
         },
       );
 
-      final space = manager.getDiskSpaceSync(path: '/mnt/media');
+      final space = manager.getDiskSpaceSync(path: tempDir.path);
 
-      expect(resolvedPath, '/mnt/media');
+      expect(resolvedPath, tempDir.path);
       expect(space, const DiskSpace(freeBytes: 10, totalBytes: 20));
     });
 
     test('disk space falls back to the application support path', () {
+      final tempDir = Directory.systemTemp.createTempSync('linux_support');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
       String? resolvedPath;
       final manager = LinuxPathManager(
-        dataHome: Directory('/custom/data'),
+        dataHome: tempDir,
         diskSpaceResolver: (path) {
           resolvedPath = path;
           return const DiskSpace(freeBytes: 10, totalBytes: 20);
@@ -173,7 +178,23 @@ void main() {
       );
 
       expect(manager.getDiskSpaceSync(), isNotNull);
-      expect(resolvedPath, '/custom/data');
+      expect(resolvedPath, tempDir.path);
+    });
+
+    test('disk space resolves the nearest existing ancestor', () {
+      final tempDir = Directory.systemTemp.createTempSync('linux_ancestor');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+      final missingPath = p.join(tempDir.path, 'does', 'not', 'exist');
+      String? resolvedPath;
+      final manager = LinuxPathManager(
+        diskSpaceResolver: (path) {
+          resolvedPath = path;
+          return const DiskSpace(freeBytes: 10, totalBytes: 20);
+        },
+      );
+
+      expect(manager.getDiskSpaceSync(path: missingPath), isNotNull);
+      expect(resolvedPath, tempDir.path);
     });
 
     test('disk space reports real volume capacity on Linux', () async {

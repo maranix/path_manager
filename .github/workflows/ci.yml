@@ -136,9 +136,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Disable Spotlight on workspace to speed up I/O
-        run: sudo mdutil -i off "${{ github.workspace }}"
-
       - name: Boot iOS Simulator Early (Background)
         run: |
           DEVICE_ID=$(xcrun simctl list devices available 'iPhone' | grep -m 1 -E -o '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')

@@ -21,6 +21,22 @@ This plugin leverages direct native interop without MethodChannels:
 
 ---
 
+## Application-Scoped Directories
+
+Application support and cache directories are namespaced per application, matching platform conventions:
+
+| Platform | Support directory | Cache directory |
+|---|---|---|
+| Android | Internal app files directory | Internal app cache directory |
+| iOS | App container `Library/Application Support` | App container `Library/Caches` |
+| macOS | `~/Library/Application Support/<bundle-id>` (or the sandbox container equivalent) | `~/Library/Caches/<bundle-id>` (or the sandbox container equivalent) |
+| Linux | `$XDG_DATA_HOME/<app-id>` | `$XDG_CACHE_HOME/<app-id>` |
+| Windows | `%APPDATA%\<company>\<product>` | `%LOCALAPPDATA%\<company>\<product>` |
+
+On Linux, `<app-id>` comes from the running `GApplication` when available, falling back to the executable name. On Windows, `<company>` is omitted when the executable has no company metadata and `<product>` falls back to the executable name. Documents, downloads, and desktop media directories remain global user directories.
+
+---
+
 ## Platform & Method Support
 
 | Method | Android | iOS | macOS | Linux | Windows | Description |
@@ -45,7 +61,7 @@ This plugin leverages direct native interop without MethodChannels:
 | `getVideosDirectory()` / `getVideosDirectorySync()` | ❌ | ❌ | ✅ | ✅ | ✅ | Global user videos directory. |
 | `getDiskSpace({path})` / `getDiskSpaceSync({path})` | ✅ | ✅ | ✅ | ✅ | ✅ | Free and total volume capacity in bytes for the volume containing `path`. |
 | `getApplicationCacheSize()` | ✅ | ✅ | ✅ | ✅ | ✅ | Recursive application cache size in bytes. |
-| `clearApplicationCache()` | ✅ | ✅ | ✅ | ✅ | ✅ | Deletes cache contents while preserving the cache directory. |
+| `clearApplicationCache()` | ✅ | ✅ | ✅ | ✅ | ✅ | Deletes and recreates the application cache directory. |
 | `getApplication*Subdirectory(subpath)` | ✅ | ✅ | ✅ | ✅ | ✅ | Creates a validated, namespaced subdirectory. |
 | `formatBytes(bytes)` | ✅ | ✅ | ✅ | ✅ | ✅ | Formats a byte count into a human-readable string. |
 | `setApplicationPathIsExcludedFromBackup(...)` | ❌ | ✅ | ✅ | ❌ | ❌ | Programmatically toggles the backup exclusion flag. |
@@ -293,7 +309,7 @@ print('Total: ${PathManager.formatBytes(space.totalBytes)}');
 final int cacheBytes = await PathManager.getApplicationCacheSize();
 print('Cache size: ${PathManager.formatBytes(cacheBytes)}');
 
-// Delete cache contents while keeping the cache directory itself.
+// Delete and recreate the application cache directory.
 await PathManager.clearApplicationCache();
 
 try {
@@ -304,7 +320,9 @@ try {
 }
 ```
 
-`getApplicationCacheSize()` returns the recursive size of the application cache directory **in bytes**, skipping symbolic links and files that disappear while walking. `formatBytes()` renders byte counts with 1024-based units (`1536` becomes `1.5 KB`).
+`getApplicationCacheSize()` returns the recursive size of the application cache directory **in bytes**, skipping symbolic links and files that disappear while walking. It does not include other applications or the rest of the OS cache. `getDiskSpace()` reports volume capacity instead, not the size of the application cache. `formatBytes()` renders byte counts with 1024-based units (`1536` becomes `1.5 KB`).
+
+`clearApplicationCache()` deletes and recreates the application cache directory, so a cache directory owned by another application is never touched.
 
 ---
 

@@ -440,20 +440,20 @@ void main() {
       expect(await PathManager.getApplicationCacheSize(), 0);
     });
 
-    test(
-      'clearApplicationCache removes contents but keeps the directory',
-      () async {
-        await File('${cacheDir.path}/a.txt').writeAsString('data');
-        final nested = Directory('${cacheDir.path}/nested');
-        await nested.create();
-        await File('${nested.path}/b.txt').writeAsString('data');
+    test('clearApplicationCache deletes and recreates the directory', () async {
+      final sibling = File('${tempRoot.path}/keep.txt');
+      await sibling.writeAsString('keep');
+      await File('${cacheDir.path}/a.txt').writeAsString('data');
+      final nested = Directory('${cacheDir.path}/nested');
+      await nested.create();
+      await File('${nested.path}/b.txt').writeAsString('data');
 
-        await PathManager.clearApplicationCache();
+      await PathManager.clearApplicationCache();
 
-        expect(await cacheDir.exists(), isTrue);
-        expect(await cacheDir.list().toList(), isEmpty);
-      },
-    );
+      expect(await cacheDir.exists(), isTrue);
+      expect(await cacheDir.list().toList(), isEmpty);
+      expect(await sibling.exists(), isTrue);
+    });
 
     test('clearApplicationCache tolerates a missing cache', () async {
       await cacheDir.delete(recursive: true);

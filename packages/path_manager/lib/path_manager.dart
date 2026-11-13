@@ -505,7 +505,8 @@ abstract final class PathManager {
   ///
   /// [path] selects the volume to query; it may refer to a directory or a file
   /// on that volume. The returned [DiskSpace] describes the volume's free and
-  /// total capacity in bytes, not the size of the entity at [path].
+  /// total capacity in bytes, not the size of the entity at [path]. Use
+  /// [getApplicationCacheSize] to measure the application cache instead.
   ///
   /// When [path] is `null`, the application support directory is used.
   ///
@@ -536,7 +537,8 @@ abstract final class PathManager {
   ///
   /// [path] selects the volume to query; it may refer to a directory or a file
   /// on that volume. The returned [DiskSpace] describes the volume's free and
-  /// total capacity in bytes, not the size of the entity at [path].
+  /// total capacity in bytes, not the size of the entity at [path]. Use
+  /// [getApplicationCacheSize] to measure the application cache instead.
   ///
   /// When [path] is `null`, the application support directory is used.
   ///
@@ -561,6 +563,9 @@ abstract final class PathManager {
   /// The directory is walked recursively without following symbolic links.
   /// Returns `0` when the cache directory does not exist. Files that disappear
   /// or cannot be read while walking are skipped.
+  ///
+  /// This measures only the application cache directory. Use [getDiskSpace] to
+  /// query the free and total capacity of the volume that contains it.
   ///
   /// Use [formatBytes] to render the result for display.
   ///
@@ -589,11 +594,14 @@ abstract final class PathManager {
     return total;
   }
 
-  /// Deletes the contents of the application cache directory.
+  /// Deletes the application cache directory and recreates it.
   ///
-  /// The cache directory itself is preserved because the operating system
-  /// expects it to exist. Entries that are locked or removed concurrently are
-  /// skipped.
+  /// Deleting the directory itself removes entries that may have been created
+  /// while the cache was being cleared. The directory is recreated because the
+  /// operating system expects it to exist. If the directory cannot be removed
+  /// (for example, because Windows has an open handle inside it), entries are
+  /// deleted individually instead; entries that are locked or removed
+  /// concurrently are skipped.
   ///
   /// ### Examples
   ///
@@ -604,12 +612,29 @@ abstract final class PathManager {
     final cache = await getApplicationCacheDirectory();
     if (!await cache.exists()) return;
 
-    await for (final entity in cache.list(followLinks: false)) {
+    try {
+      await cache.delete(recursive: true);
+    } on FileSystemException {
+      // A file inside the directory may be locked. Fall back to deleting the
+      // entries individually so the rest of the cache can still be reclaimed.
       try {
-        await entity.delete(recursive: true);
+        await for (final entity in cache.list(followLinks: false)) {
+          try {
+            await entity.delete(recursive: true);
+          } on FileSystemException {
+            // The entry may be locked or already removed.
+          }
+        }
       } on FileSystemException {
-        // The entry may be locked or already removed.
+        // The directory may have been removed concurrently.
       }
+    }
+
+    try {
+      await cache.create(recursive: true);
+    } on FileSystemException {
+      // Recreating the directory may fail if it was deleted concurrently or
+      // its parent is not writable. The caller can retry when needed.
     }
   }
 

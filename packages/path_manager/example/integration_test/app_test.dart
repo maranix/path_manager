@@ -142,15 +142,23 @@ void main() {
       );
       expect(cacheSubdir.existsSync(), isTrue);
       final probe = File('${cacheSubdir.path}/probe.bin');
-      await probe.writeAsBytes(List.filled(64, 0));
-      expect(
-        await PathManager.getApplicationCacheSize(),
-        greaterThanOrEqualTo(64),
-      );
+      // Use a 1 MiB probe so the size delta is larger than any unrelated cache
+      // files that may be written concurrently during the test.
+      await probe.writeAsBytes(List.filled(1024 * 1024, 0));
+      final sizeWithProbe = await PathManager.getApplicationCacheSize();
+      expect(sizeWithProbe, greaterThanOrEqualTo(1024 * 1024));
 
       await PathManager.clearApplicationCache();
       expect(await cache.exists(), isTrue);
-      expect(await PathManager.getApplicationCacheSize(), 0);
+      expect(await probe.exists(), isFalse);
+
+      // Clearing removes and recreates the directory. Entries locked by the
+      // OS or other processes are skipped, so the cache need not be empty
+      // afterwards, but it must have reclaimed at least the probe.
+      expect(
+        await PathManager.getApplicationCacheSize(),
+        lessThan(sizeWithProbe),
+      );
 
       // 12. Byte formatting
       expect(PathManager.formatBytes(0), '0 B');

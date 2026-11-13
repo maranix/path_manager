@@ -1,9 +1,10 @@
 ## 1.0.0
 
+- Application support and cache directories are now scoped per application on macOS, Linux, and Windows.
 - Added synchronous directory getters for temporary, application support, documents, cache, and downloads directories.
 - Added `getDesktopDirectory()`, `getPicturesDirectory()`, `getMusicDirectory()`, and `getVideosDirectory()` with synchronous counterparts.
 - Added `getDiskSpace()` and `getDiskSpaceSync()`, reporting the free and total capacity of the volume containing a path, in bytes. Failures throw `FileSystemException`.
-- Added `getApplicationCacheSize()` (returns bytes), `clearApplicationCache()`, and `formatBytes()`.
+- Added `getApplicationCacheSize()` (returns bytes), `clearApplicationCache()`, and `formatBytes()`. `clearApplicationCache()` deletes and recreates the application cache directory, while `getApplicationCacheSize()` measures only that directory.
 - Added `getApplicationSupportSubdirectory()`, `getApplicationCacheSubdirectory()`, and `getApplicationDocumentsSubdirectory()` with hardened path validation.
 - Added `path` as a direct dependency for subdirectory normalization.
 

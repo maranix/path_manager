@@ -156,6 +156,8 @@ void main() {
     });
 
     test('disk space uses an explicit path when provided', () {
+      final tempDir = Directory.systemTemp.createTempSync('windows_explicit');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
       String? resolvedPath;
       final manager = WindowsPathManager(
         diskSpaceResolver: (path) {
@@ -164,9 +166,10 @@ void main() {
         },
       );
 
-      final space = manager.getDiskSpaceSync(path: r'D:\Media');
+      // The path exists, so it is passed through unchanged on Windows too.
+      final space = manager.getDiskSpaceSync(path: tempDir.path);
 
-      expect(resolvedPath, r'D:\Media');
+      expect(resolvedPath, tempDir.path);
       expect(space, const DiskSpace(freeBytes: 10, totalBytes: 20));
     });
 
